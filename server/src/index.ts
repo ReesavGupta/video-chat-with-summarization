@@ -2,12 +2,22 @@ import http from 'http'
 import express from 'express'
 import { createConnection } from '../src/ws'
 import { WebSocketServer } from 'ws'
+import { createMediasoupWorkerAndRouter } from './lib/worker'
 
 const expressApp = express()
 const server = http.createServer(expressApp)
 const wss = new WebSocketServer({ server })
 
-createConnection(wss)
+//
+// start mediasoup with a single worker and router
+//
+const result = await createMediasoupWorkerAndRouter()
+if (!result) {
+  throw new Error('Failed to create Mediasoup worker and router')
+}
+const { worker, router } = result
+
+createConnection(wss, router)
 
 const port = 3000
 
