@@ -4,6 +4,48 @@ import type {
   AudioLevelObserverVolume,
 } from 'mediasoup/node/lib/AudioLevelObserverTypes'
 
+// for each peer that connects, we keep a table of peers and what
+// tracks are being sent and received. we also need to know the last
+// time we saw the peer, so that we can disconnect clients that have
+// network issues.
+
+// [peerId] : {
+//   joinTs: <ms timestamp>
+//   lastSeenTs: <ms timestamp>
+//   media: {
+//     [mediaTag] : {
+//       paused: <bool>
+//       encodings: []
+//     }
+//   },
+//   stats: {
+//     producers: {
+//       [producerId]: {
+//         ...(selected producer stats)
+//       }
+//     consumers: {
+//       [consumerId]: { ...(selected consumer stats) }
+//     }
+//   }
+//   consumerLayers: {
+//     [consumerId]:
+//         currentLayer,
+//         clientSelectedLayer,
+//       }
+//     }
+//   }
+// }
+//
+// we also send information about the active speaker, as tracked by
+// our audioLevelObserver.
+//
+// internally, we keep lists of transports, producers, and
+// consumers. whenever we create a transport, producer, or consumer,
+// we save the remote peerId in the object's `appData`. for producers
+// and consumers we also keep track of the client-side "media tag", to
+// correlate tracks.
+//
+
 export class Room {
   public id: string
 
@@ -55,6 +97,7 @@ export class Room {
       this.activeSpeaker = { producerId: null, volume: null, peerId: null }
     })
   }
+
   addPeer(peerId: string) {
     this.peers[peerId] = {
       peerId,
@@ -64,5 +107,10 @@ export class Room {
       stats: { producers: {}, consumers: {} },
       consumerLayers: {},
     }
+  }
+
+  removePeer(peerId: string) {
+    // remove the peerId from peers
+    // close its transport
   }
 }
