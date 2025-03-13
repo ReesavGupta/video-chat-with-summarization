@@ -20,7 +20,10 @@ export const createConnection = async (
           await handleJoinRoom(socket, message)
           break
         case 'get-all-peers':
-          await getAllPeers(socket, message)
+          await handleGetAllPeers(socket, message)
+          break
+        case 'sync':
+          await handleSync(message, socket)
           break
       }
     })
@@ -28,10 +31,7 @@ export const createConnection = async (
 
   async function handleJoinRoom(
     socket: WebSocket,
-    message: {
-      type: string
-      data: { roomId: string }
-    }
+    message: { type: string; data: { roomId: string } }
   ) {
     const { roomId } = message.data
 
@@ -39,8 +39,6 @@ export const createConnection = async (
     if (!rooms.has(roomId)) {
       const room = new Room(roomId, router)
       await room.init()
-      // i need to generate a uuid and send it back to the client here
-
       room.addPeer(peerId)
       rooms.set(roomId, room)
     }
@@ -57,23 +55,47 @@ export const createConnection = async (
     )
   }
 
-  async function getAllPeers(
+  async function handleGetAllPeers(
     socket: WebSocket,
     message: { type: string; data: { roomId: string } }
   ) {
-    if (message && message.data) {
-      const { roomId } = message.data
-      console.log(`this is roomId: `, roomId)
-      // console.log(`rooms:`, rooms)
-      if (rooms.has(roomId)) {
-        const room = rooms.get(roomId)
-        socket.send(
-          JSON.stringify({
-            type: 'all-peers',
-            peers: room?.peers,
-          })
-        )
-      }
+    const { roomId } = message.data
+
+    console.log(`this is roomId: `, roomId)
+
+    if (rooms.has(roomId)) {
+      const room = rooms.get(roomId)
+      socket.send(
+        JSON.stringify({
+          type: 'all-peers',
+          peers: room ? room.peers : [],
+        })
+      )
+    }
+  }
+
+  async function handleSync(
+    message: { data: { peerId: string; roomId: string }; type: string },
+    socket: WebSocket
+  ) {
+    const { peerId, roomId } = message.data
+
+    if (!peerId) {
+      console.error('No peer id :(')
+      return
+    }
+
+    if (rooms.has(roomId)) {
+      const room = rooms.get(roomId)
+      socket.send(
+        JSON.stringify({
+          type: 'on-sync',
+          data: {
+            activeSpeaker: room?.activeSpeaker || null,
+            peers: room?.peers || [],
+          },
+        })
+      )
     }
   }
 }
