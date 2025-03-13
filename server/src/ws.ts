@@ -2,6 +2,7 @@ import WebSocket, { WebSocketServer } from 'ws'
 import { Room } from './room/Room'
 import type { Router } from 'mediasoup/node/lib/RouterTypes'
 import uuidSingleton from './utils/generateUuid'
+import { createWebRtcTransport } from './lib/createWebRtcTransport'
 
 export const createConnection = async (
   wss: WebSocketServer,
@@ -24,6 +25,12 @@ export const createConnection = async (
           break
         case 'sync':
           await handleSync(message, socket)
+          break
+        case 'getRouterRtpCapabilities':
+          handleGetRouterRtpCapabilities(socket)
+          break
+        case 'createTransport':
+          createTransport(message, socket)
           break
       }
     })
@@ -96,6 +103,52 @@ export const createConnection = async (
           },
         })
       )
+    }
+  }
+
+  function handleGetRouterRtpCapabilities(socket: WebSocket) {
+    socket.send(
+      JSON.stringify({
+        type: 'routerCapabilities',
+        rtpCapabilities: router.rtpCapabilities,
+      })
+    )
+  }
+
+  async function createTransport(
+    message: {
+      type: string
+      data: { direction: string; peerId: string; roomId: string }
+    },
+    socket: WebSocket
+  ) {
+    const { direction, peerId, roomId } = message.data
+    try {
+      const { transport, params } = await createWebRtcTransport(
+        router,
+        direction,
+        peerId
+      )
+
+      const room = rooms.get(roomId)
+      if (!room) {
+        console.error('invalid room for user')
+        return
+      }
+
+      room.transports[transport.id] = transport
+
+      socket.send(
+        JSON.stringify({
+          type: 'transportCreated',
+          data: {
+            transportOptions: params,
+          },
+        })
+      )
+    } catch (error) {
+      console.error('something went wrong while creating a webrtc transport')
+      return
     }
   }
 }
