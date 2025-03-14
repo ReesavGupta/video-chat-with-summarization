@@ -8,7 +8,7 @@ export async function createWebRtcTransport(
 ) {
   const { initialAvailableOutgoingBitrate, maxIncomeBitrate } =
     config.mediasoup.webRtcTransport
-  const transport = await router.createWebRtcTransport({
+    const transport = await router.createWebRtcTransport({
     listenIps: config.mediasoup.webRtcTransport.listenIps,
     enableUdp: true,
     enableTcp: true,

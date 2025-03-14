@@ -3,6 +3,8 @@ import { Room } from './room/Room'
 import type { Router } from 'mediasoup/node/lib/RouterTypes'
 import uuidSingleton from './utils/generateUuid'
 import { createWebRtcTransport } from './lib/createWebRtcTransport'
+import type { DtlsParameters } from 'mediasoup/node/lib/WebRtcTransportTypes'
+import type { AppData, Transport } from 'mediasoup/node/lib/types'
 
 export const createConnection = async (
   wss: WebSocketServer,
@@ -30,8 +32,10 @@ export const createConnection = async (
           handleGetRouterRtpCapabilities(socket)
           break
         case 'createTransport':
-          createTransport(message, socket)
+          handleCreateTransport(message, socket)
           break
+        case 'connectTransport':
+          handleConnectTransport(message, socket)
       }
     })
   })
@@ -115,7 +119,7 @@ export const createConnection = async (
     )
   }
 
-  async function createTransport(
+  async function handleCreateTransport(
     message: {
       type: string
       data: { direction: string; peerId: string; roomId: string }
@@ -129,14 +133,16 @@ export const createConnection = async (
         direction,
         peerId
       )
-
       const room = rooms.get(roomId)
+
       if (!room) {
         console.error('invalid room for user')
         return
       }
 
       room.transports[transport.id] = transport
+
+      // console.log(`this is rooms.transports:`, room.transports)
 
       socket.send(
         JSON.stringify({
@@ -149,6 +155,37 @@ export const createConnection = async (
     } catch (error) {
       console.error('something went wrong while creating a webrtc transport')
       return
+    }
+  }
+
+  async function handleConnectTransport(
+    message: {
+      type: string
+      data: {
+        transportId: string
+        dtlsParameters: DtlsParameters
+        roomId: string
+      }
+    },
+    socket: WebSocket
+  ) {
+    const { transportId, dtlsParameters, roomId } = message.data
+
+    const room = rooms.get(roomId)
+
+    if (room) {
+      let transport: Transport<AppData> = room.transports[transportId]
+
+      console.log(`connect transport:`, transport)
+      await transport.connect({ dtlsParameters })
+      socket.send(
+        JSON.stringify({
+          type: 'connected',
+          data: {
+            connected: true,
+          },
+        })
+      )
     }
   }
 }
