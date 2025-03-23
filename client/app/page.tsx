@@ -182,7 +182,7 @@ export default function Home() {
       })
       setLocalCam(localCam)
     } catch (e) {
-      console.error('couldnt get the user camera ')
+      console.error('couldnt get the user camera')
       return
     }
   }
@@ -268,14 +268,66 @@ export default function Home() {
           }
           socketRef.current.addEventListener('message', messageHandler)
         })
+
+        if (direction === 'send') {
+          // sending transports will emit a produce event when a new track
+          // needs to be set up to start sending. the producer's appData is
+          // passed as a parameter
+          transport.on(
+            'produce',
+            ({ kind, rtpParameters, appData }, callback, errback) => {
+              console.log(`this is the appData.mediaTag:`, appData.mediaTag)
+
+              // we may want to start out paused (if the checkboxes in the ui
+              // aren't checked, for each media type. not very clean code, here
+              // but, you know, this isn't a real application.)
+
+              let paused = false
+              if (appData.mediaTag === 'cam-video') {
+                paused = getCamPausedState()
+              } else if (appData.mediaTag === 'cam-audio') {
+                paused = getMicPausedState()
+              }
+
+              // tell the server what it needs to know from us in order to set
+              // up a server-side producer object, and get back a
+              // producer.id. call callback() on success or errback() on
+              // failure.
+              if (!socketRef.current) {
+                console.error(`there is no socket inside tranport produce`)
+                return
+              }
+              const message = JSON.stringify({
+                transportId: transport.id,
+                roomId: roomIdInputRef.current,
+                kind,
+                rtpParameters,
+                appData,
+              })
+              socketRef.current.send(message)
+
+              function onProduceMessageHandler(event: MessageEvent) {
+                console.log(`this is onproducemessage Handler`)
+                const message = JSON.parse(event.data.toString())
+                const { id } = message.data
+                callback({ id })
+              }
+
+              socketRef.current.addEventListener(
+                'message',
+                onProduceMessageHandler
+              )
+            }
+          )
+        }
       } else {
         return
       }
     }
     socketRef.current.addEventListener('message', messageHandler)
-    if (direction === 'send') {
-      // device?.createSendTransport()
-    }
+    // if (direction === 'send') {
+    //   // device?.createSendTransport()
+    // }
   }
 
   function handleJoinRoom() {
