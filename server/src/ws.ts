@@ -4,7 +4,13 @@ import type { Router } from 'mediasoup/node/lib/RouterTypes'
 import uuidSingleton from './utils/generateUuid'
 import { createWebRtcTransport } from './lib/createWebRtcTransport'
 import type { DtlsParameters } from 'mediasoup/node/lib/WebRtcTransportTypes'
-import type { AppData, Transport } from 'mediasoup/node/lib/types'
+import type {
+  AppData,
+  Producer,
+  RtpParameters,
+  Transport,
+} from 'mediasoup/node/lib/types'
+import type { HandleSendTrackMessageType } from './types/types'
 
 export const createConnection = async (
   wss: WebSocketServer,
@@ -36,6 +42,10 @@ export const createConnection = async (
           break
         case 'connectTransport':
           handleConnectTransport(message, socket)
+          break
+        case 'send-track':
+          handleSendTrack(message, socket)
+          break
       }
     })
   })
@@ -187,5 +197,83 @@ export const createConnection = async (
         })
       )
     }
+  }
+
+  async function handleSendTrack(
+    message: HandleSendTrackMessageType,
+    socket: WebSocket
+  ) {
+    const {
+      peerId,
+      roomId,
+      appData,
+      kind,
+      rtpParameters,
+      transportId,
+      paused = false,
+    } = message
+
+    const room = rooms.get(roomId)
+    if (!room) {
+      console.error('there is no room id')
+      return
+    }
+
+    let transport: Transport = room.transports[transportId]
+
+    let producer: Producer<AppData> = await transport.produce({
+      kind,
+      rtpParameters,
+      appData: { ...appData, peerId, transportId },
+      paused,
+    })
+
+    if (!producer) {
+      console.error(
+        `failed to create a producer for transportId: ${transportId} `
+      )
+    }
+
+    producer.on('transportclose', () => {
+      console.log("producer's transport closed", producer.id)
+      closeProducer(producer, room)
+    })
+
+    if (producer.kind === 'audio') {
+      await room.audioLevelObserver?.addProducer({ producerId: producer.id })
+    }
+
+    room.producers[producer.id] = producer
+
+    room.peers[peerId].media[appData.mediaTag as string] = {
+      paused,
+      encodings: rtpParameters.encodings,
+    }
+    const msg = JSON.stringify({
+      type: 'produced',
+      id: producer.id,
+    })
+    socket.send(msg)
+  }
+}
+
+// ------------------------utilities----------------------------------
+
+async function closeProducer(producer: Producer, room: Room) {
+  try {
+    const producerId = producer.id
+
+    producer.close()
+
+    // remove this producer from our roomState.producers list
+    delete room.producers[producerId]
+
+    // remove this track's info from our roomState...mediaTag bookkeeping
+    delete room.peers[producer.appData.peerId as string].media[
+      producer.appData.mediaTag as string
+    ]
+  } catch (error) {
+    console.error(`some error while closing up the producer`)
+    return
   }
 }

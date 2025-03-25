@@ -158,7 +158,7 @@ export default function Home() {
 
     // create a transport for outgoing media, if we don't already have one
     if (!sendTransport) {
-      const sendTransport = createTransport('send')
+      createTransport('send')
       // setSendTransport(sendTransport)
     }
 
@@ -169,6 +169,49 @@ export default function Home() {
     // state, if the checkbox in our UI is unchecked. so as soon as we
     // have a client-side camVideoProducer object, we need to set it to
     // paused as appropriate, too.
+
+    let camVideoProducer = sendTransport?.produce()
+    if (sendTransport) {
+      const videoTrack = localCam?.getVideoTracks()[0]
+
+      if (!videoTrack) {
+        console.error(`no video track`)
+        return
+      }
+
+      const videoProducer = await sendTransport.produce({
+        track: videoTrack,
+        encodings: camEncodings(),
+        appData: { mediaTag: 'cam-video' },
+      })
+
+      if (getCamPausedState()) {
+        try {
+          videoProducer.pause()
+        } catch (error) {
+          console.error(`something went wrong while pausing the video`)
+        }
+      }
+
+      const audioTrack = localCam.getAudioTracks()[0]
+      if (!audioTrack) {
+        console.error(`no audio track`)
+        return
+      }
+
+      const audioProducer = await sendTransport.produce({
+        track: audioTrack,
+        appData: { mediaTag: 'cam-audio' },
+      })
+
+      if (getMicPausedState()) {
+        try {
+          videoProducer.pause()
+        } catch (error) {
+          console.error(`something went wrong while pausing the video`)
+        }
+      }
+    }
   }
 
   async function getCam() {
@@ -220,10 +263,12 @@ export default function Home() {
         event.data.toString()
       )
 
-      if (message.type === 'transportCreated' && device) {
+      if (message.type === 'transportCreated' && device && socketRef.current) {
         console.log(`this is the eventListener message: `, message)
+        socketRef.current.removeEventListener('message', messageHandler)
 
         let transport: Transport<AppData>
+
         if (direction === 'send') {
           transport = device.createSendTransport(message.data.transportOptions)
           setSendTransport(transport!)
@@ -233,14 +278,18 @@ export default function Home() {
           console.error(`bad transport direction `)
           return
         }
+
         setTransport(transport!)
 
         // mediasoup-client will emit a connect event when media needs to
         // start flowing for the first time. send dtlsParameters to the
         // server, then call callback() on success or errback() on failure.
 
+        console.log(`this is your client side transport: `, transport)
+
         transport.on('connect', ({ dtlsParameters }, callback, errback) => {
           console.log(`you are inside the transport-connect event`)
+
           if (!socketRef.current) {
             console.error(
               `there is no socket inside the transport connect event`
@@ -258,6 +307,7 @@ export default function Home() {
               },
             })
           )
+
           const messageHandler = (event: MessageEvent) => {
             const message = JSON.parse(event.data.toString())
             if (message.type === 'transportConnected' && socketRef.current) {
@@ -284,9 +334,11 @@ export default function Home() {
 
               let paused = false
               if (appData.mediaTag === 'cam-video') {
-                paused = getCamPausedState()
+                // paused = getCamPausedState()
+                paused = false
               } else if (appData.mediaTag === 'cam-audio') {
-                paused = getMicPausedState()
+                // paused = getMicPausedState()
+                paused = false
               }
 
               // tell the server what it needs to know from us in order to set
@@ -298,8 +350,10 @@ export default function Home() {
                 return
               }
               const message = JSON.stringify({
+                type: 'send-track',
                 transportId: transport.id,
                 roomId: roomIdInputRef.current,
+                peerId,
                 kind,
                 rtpParameters,
                 appData,
@@ -311,6 +365,11 @@ export default function Home() {
                 const message = JSON.parse(event.data.toString())
                 const { id } = message.data
                 callback({ id })
+
+                socketRef.current?.removeEventListener(
+                  'message',
+                  onProduceMessageHandler
+                ) //cleanup
               }
 
               socketRef.current.addEventListener(
@@ -324,7 +383,11 @@ export default function Home() {
         return
       }
     }
+
+    // on sending the create trasport message the code below will expect a message and whenever it gets one, you need to call the message handler function
+
     socketRef.current.addEventListener('message', messageHandler)
+
     // if (direction === 'send') {
     //   // device?.createSendTransport()
     // }
@@ -354,6 +417,37 @@ export default function Home() {
   function onChangeHandler(e: any) {
     setRoomIdInput(e.target.value)
     roomIdInputRef.current = e.target.value
+  }
+
+  // --------------------utils-----------------
+
+  //
+  // encodings for outgoing video
+  //
+
+  // just two resolutions, for now, as chrome 75 seems to ignore more
+  // than two encodings
+  //
+  function camEncodings() {
+    const CAM_VIDEO_SIMULCAST_ENCODINGS = [
+      { maxBitrate: 96000, scaleResolutionDownBy: 4 },
+      { maxBitrate: 680000, scaleResolutionDownBy: 1 },
+    ]
+
+    return CAM_VIDEO_SIMULCAST_ENCODINGS
+  }
+  function getCamPausedState() {
+    // based on the state of a radio button you need to return true or false
+
+    // for now returning false
+    return false
+  }
+
+  function getMicPausedState() {
+    // based on the state of a radio button you need to return true or false
+
+    // for now returning false
+    return false
   }
   return (
     <div>

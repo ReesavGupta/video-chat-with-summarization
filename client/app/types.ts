@@ -1,4 +1,10 @@
-import { DtlsParameters, IceCandidate, IceParameters } from "mediasoup-client/lib/types"
+import {
+  AppData,
+  DtlsParameters,
+  IceCandidate,
+  IceParameters,
+  RtpParameters,
+} from 'mediasoup-client/lib/types'
 
 export type activeSpeakerType = {
   producerId: string | null
@@ -19,3 +25,5 @@ export type createTransportMessageType = {
     }
   }
 }
+
+
