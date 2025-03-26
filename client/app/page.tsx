@@ -37,6 +37,7 @@ export default function Home() {
   const syncIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const socketRef = useRef<WebSocket | null>(null)
   const roomIdInputRef = useRef<string>('')
+  const sendTransportRef = useRef<Transport | null>(null)
 
   useEffect(() => {
     const ws = new WebSocket(wsUrl)
@@ -157,9 +158,11 @@ export default function Home() {
     await getCam()
 
     // create a transport for outgoing media, if we don't already have one
+    console.log(`this is sendTransport:`, sendTransport)
     if (!sendTransport) {
       createTransport('send')
       // setSendTransport(sendTransport)
+      console.log(`this is from the inside`)
     }
 
     // start sending video. the transport logic will initiate a
@@ -169,6 +172,11 @@ export default function Home() {
     // state, if the checkbox in our UI is unchecked. so as soon as we
     // have a client-side camVideoProducer object, we need to set it to
     // paused as appropriate, too.
+
+    console.log(
+      `this is the sendTransport in shareCameraStreams: `,
+      sendTransport
+    )
 
     let camVideoProducer = sendTransport?.produce()
     if (sendTransport) {
@@ -272,6 +280,7 @@ export default function Home() {
         if (direction === 'send') {
           transport = device.createSendTransport(message.data.transportOptions)
           setSendTransport(transport!)
+          sendTransportRef.current = transport
         } else if (direction === 'recv') {
           transport = device.createRecvTransport(message.data.transportOptions)
         } else {
