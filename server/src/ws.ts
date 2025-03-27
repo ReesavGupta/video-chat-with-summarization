@@ -186,7 +186,7 @@ export const createConnection = async (
     if (room) {
       let transport: Transport<AppData> = room.transports[transportId]
 
-      console.log(`connect transport:`, transport)
+      // console.log(`connect transport:`, transport)
       await transport.connect({ dtlsParameters })
       socket.send(
         JSON.stringify({

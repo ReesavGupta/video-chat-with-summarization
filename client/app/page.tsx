@@ -80,6 +80,62 @@ export default function Home() {
     }
   }, [])
 
+  useEffect(() => {
+    async function startProducing() {
+      if (!sendTransportRef.current) {
+        console.error(`there is no sendTransportRef`)
+        return
+      }
+
+      // let camVideoProducer = sendTransportRef.current.produce()
+
+      if (sendTransport) {
+        const videoTrack = localCam?.getVideoTracks()[0]
+
+        if (!videoTrack) {
+          console.error(`no video track`)
+          return
+        }
+
+        const videoProducer = await sendTransport.produce({
+          track: videoTrack,
+          encodings: camEncodings(),
+          appData: { mediaTag: 'cam-video' },
+        })
+
+        if (getCamPausedState()) {
+          try {
+            videoProducer.pause()
+          } catch (error) {
+            console.error(`something went wrong while pausing the video`)
+          }
+        }
+
+        const audioTrack = localCam.getAudioTracks()[0]
+        if (!audioTrack) {
+          console.error(`no audio track`)
+          return
+        }
+
+        const audioProducer = await sendTransport.produce({
+          track: audioTrack,
+          appData: { mediaTag: 'cam-audio' },
+        })
+
+        if (getMicPausedState()) {
+          try {
+            audioProducer.pause()
+          } catch (error) {
+            console.error(`something went wrong while pausing the video`)
+          }
+        }
+      }
+    }
+    if (sendTransportRef.current && localCam) {
+      startProducing()
+    }
+  }, [sendTransportRef.current, localCam])
+
   function handleJoinedRoom(message: {
     type: string
     data: { peerId: string }
@@ -158,8 +214,7 @@ export default function Home() {
     await getCam()
 
     // create a transport for outgoing media, if we don't already have one
-    console.log(`this is sendTransport:`, sendTransport)
-    if (!sendTransport) {
+    if (!sendTransportRef.current) {
       createTransport('send')
       // setSendTransport(sendTransport)
       console.log(`this is from the inside`)
@@ -173,53 +228,74 @@ export default function Home() {
     // have a client-side camVideoProducer object, we need to set it to
     // paused as appropriate, too.
 
-    console.log(
-      `this is the sendTransport in shareCameraStreams: `,
-      sendTransport
-    )
+    /**********************************************************
+    **********************************************************
+    **********************************************************
+    **********************************************************
+    **********************************************************
+    **********************************************************
+    **********************************************************
 
-    let camVideoProducer = sendTransport?.produce()
-    if (sendTransport) {
-      const videoTrack = localCam?.getVideoTracks()[0]
+    // the commented code below needs to run only when there is sendTransportRef.current and the mediastream to send
 
-      if (!videoTrack) {
-        console.error(`no video track`)
-        return
-      }
 
-      const videoProducer = await sendTransport.produce({
-        track: videoTrack,
-        encodings: camEncodings(),
-        appData: { mediaTag: 'cam-video' },
-      })
+    // if (!sendTransportRef.current) {
+    //   console.error(`there is no sendTransportRef`)
+    //   return
+    // }
 
-      if (getCamPausedState()) {
-        try {
-          videoProducer.pause()
-        } catch (error) {
-          console.error(`something went wrong while pausing the video`)
-        }
-      }
+    // // let camVideoProducer = sendTransportRef.current.produce()
 
-      const audioTrack = localCam.getAudioTracks()[0]
-      if (!audioTrack) {
-        console.error(`no audio track`)
-        return
-      }
+    // if (sendTransport) {
+    //   const videoTrack = localCam?.getVideoTracks()[0]
 
-      const audioProducer = await sendTransport.produce({
-        track: audioTrack,
-        appData: { mediaTag: 'cam-audio' },
-      })
+    //   if (!videoTrack) {
+    //     console.error(`no video track`)
+    //     return
+    //   }
 
-      if (getMicPausedState()) {
-        try {
-          videoProducer.pause()
-        } catch (error) {
-          console.error(`something went wrong while pausing the video`)
-        }
-      }
-    }
+    //   const videoProducer = await sendTransport.produce({
+    //     track: videoTrack,
+    //     encodings: camEncodings(),
+    //     appData: { mediaTag: 'cam-video' },
+    //   })
+
+    //   if (getCamPausedState()) {
+    //     try {
+    //       videoProducer.pause()
+    //     } catch (error) {
+    //       console.error(`something went wrong while pausing the video`)
+    //     }
+    //   }
+
+    //   const audioTrack = localCam.getAudioTracks()[0]
+    //   if (!audioTrack) {
+    //     console.error(`no audio track`)
+    //     return
+    //   }
+
+    //   const audioProducer = await sendTransport.produce({
+    //     track: audioTrack,
+    //     appData: { mediaTag: 'cam-audio' },
+    //   })
+
+    //   if (getMicPausedState()) {
+    //     try {
+    //       audioProducer.pause()
+    //     } catch (error) {
+    //       console.error(`something went wrong while pausing the video`)
+    //     }
+    //   }
+    // }
+
+
+    **********************************************************
+    **********************************************************
+    **********************************************************
+    **********************************************************
+    **********************************************************
+    **********************************************************
+    **********************************************************/
   }
 
   async function getCam() {
