@@ -395,7 +395,7 @@ export default function Home() {
 
           const messageHandler = (event: MessageEvent) => {
             const message = JSON.parse(event.data.toString())
-            if (message.type === 'transportConnected' && socketRef.current) {
+            if (message.type === 'connected' && socketRef.current) {
               console.log(`transport is connected sucessfully`)
               callback()
               socketRef.current.removeEventListener('message', messageHandler) // Cleanup
@@ -448,7 +448,8 @@ export default function Home() {
               function onProduceMessageHandler(event: MessageEvent) {
                 console.log(`this is onproducemessage Handler`)
                 const message = JSON.parse(event.data.toString())
-                const { id } = message.data
+                console.log(`this is the message:`, message)
+                const { id } = message
                 callback({ id })
 
                 socketRef.current?.removeEventListener(
