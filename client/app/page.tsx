@@ -6,6 +6,7 @@ import {
   DtlsParameters,
   IceCandidate,
   IceParameters,
+  Producer,
   Transport,
 } from 'mediasoup-client/lib/types'
 import { useEffect, useState, useRef, ChangeEvent } from 'react'
@@ -14,6 +15,7 @@ import {
   createTransportMessageType,
   peersType,
 } from './types'
+import TrackControl from './components/TrackControl'
 
 export default function Home() {
   const wsUrl = 'ws://localhost:3000'
@@ -27,18 +29,38 @@ export default function Home() {
   const [currentActiveSpeaker, setCurrentActiveSpeaker] =
     useState<activeSpeakerType | null>(null)
   const [peers, setPeers] = useState<peersType | null>(null)
+
+  const [lastPollSyncData, setLastPollSyncData] = useState<peersType>({})
+
   const [device, setDevice] = useState<Device | null>(null)
   const [localCam, setLocalCam] = useState<MediaStream | null>(null)
+
+  const [sortedPeerList, setSortedPeerList] = useState<
+    {
+      id: string
+      joinTs: any
+      media: any
+    }[]
+  >([])
+
+  const [camVideoProducer, setCamVideoProducer] = useState<Producer | null>(
+    null
+  )
+  const [camAudioProducer, setCamAudioProducer] = useState<Producer | null>(
+    null
+  )
+
   // --------------transport-states--------------
   const [transport, setTransport] = useState<Transport | null>(null)
 
   const [sendTransport, setSendTransport] = useState<Transport | null>(null)
+
   // -----------Refs-----------------------------
   const syncIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const socketRef = useRef<WebSocket | null>(null)
   const roomIdInputRef = useRef<string>('')
   const sendTransportRef = useRef<Transport | null>(null)
-
+  const lastPollSyncDataRef = useRef<peersType | null>(null)
   useEffect(() => {
     const ws = new WebSocket(wsUrl)
 
@@ -103,6 +125,8 @@ export default function Home() {
           appData: { mediaTag: 'cam-video' },
         })
 
+        setCamVideoProducer(videoProducer)
+
         if (getCamPausedState()) {
           try {
             videoProducer.pause()
@@ -112,6 +136,7 @@ export default function Home() {
         }
 
         const audioTrack = localCam.getAudioTracks()[0]
+
         if (!audioTrack) {
           console.error(`no audio track`)
           return
@@ -121,6 +146,8 @@ export default function Home() {
           track: audioTrack,
           appData: { mediaTag: 'cam-audio' },
         })
+
+        setCamAudioProducer(audioProducer)
 
         if (getMicPausedState()) {
           try {
@@ -174,11 +201,10 @@ export default function Home() {
     setPeers(peers)
 
     // always update bandwidth stats and active speaker display
-
-    // updateActiveSpeaker();
-    // updateCamVideoProducerStatsDisplay();
-    // updateScreenVideoProducerStatsDisplay();
-    // updateConsumersStatsDisplay();
+    //---->  // updateActiveSpeaker();
+    //---->  // updateCamVideoProducerStatsDisplay();
+    //---->  // updateScreenVideoProducerStatsDisplay();
+    //---->  // updateConsumersStatsDisplay();
 
     // decide if we need to update tracks list and video/audio
     // elements. build list of peers, sorted by join time, removing last
@@ -186,11 +212,42 @@ export default function Home() {
     // comparison. compare this list with the cached list from last
     // poll.
 
+    let currentSortedPeerList = sortPeers(peers)
+
+    setSortedPeerList(currentSortedPeerList)
+
+    let lastSortedPeerList: {
+      id: string
+      joinTs: any
+      media: any
+    }[] = []
+
+    if (lastPollSyncDataRef.current) {
+      lastSortedPeerList = sortPeers(lastPollSyncDataRef.current)
+    }
+
+    console.log(
+      `this is the currentSortedPeerList: `,
+      currentSortedPeerList,
+      '\n\n'
+    )
+    // console.log(`this is the lastSortedPeerList: `, lastSortedPeerList, '\n\n')
+
+    if (!deepEqual(currentSortedPeerList, lastSortedPeerList)) {
+      // need to update the display here
+      // updateDisplay(peers, currentSortedPeerList)
+    }
+
     // if a peer has gone away, we need to close all consumers we have
     // for that peer and remove video and audio elements
 
     // if a peer has stopped sending media that we are consuming, we
     // need to close the consumer and remove video and audio elements
+
+    console.log(`this is peers : `, peers)
+
+    setLastPollSyncData(peers)
+    lastPollSyncDataRef.current = peers
   }
 
   async function handleRouterCapabilities(message: {
@@ -535,6 +592,30 @@ export default function Home() {
     // for now returning false
     return false
   }
+
+  function sortPeers(peers: peersType) {
+    return Object.entries(peers)
+      .map(([id, info]) => ({
+        id,
+        joinTs: info.joinTs,
+        media: { ...info.media },
+      }))
+      .sort((a, b) => (a.joinTs > b.joinTs ? 1 : b.joinTs > a.joinTs ? -1 : 0))
+  }
+  function deepEqual<T>(arr1: T[], arr2: T[]): boolean {
+    if (arr1.length !== arr2.length) return false
+
+    return arr1.every((obj1, index) => {
+      const obj2 = arr2[index]
+
+      if (typeof obj1 !== 'object' || typeof obj2 !== 'object') {
+        return obj1 === obj2
+      }
+
+      return JSON.stringify(obj1) === JSON.stringify(obj2)
+    })
+  }
+
   return (
     <div>
       <h2>Video Chat App</h2>
@@ -559,6 +640,42 @@ export default function Home() {
       >
         Get All Peers
       </button>
+
+      <div className="flex border border-amber-500">
+        {camVideoProducer && (
+          <TrackControl
+            peerName="my"
+            mediaTag="cam-video"
+            mediaInfo={peers && peers[peerId]?.media?.['cam-video']}
+          />
+        )}
+
+        {camAudioProducer && (
+          <TrackControl
+            peerName="my"
+            mediaTag="cam-audio"
+            mediaInfo={peers && peers[peerId].media?.['cam-audio']}
+          />
+        )}
+
+        {/* {camVideoProducer && <TrackControl />} */}
+
+        {/* {camVideoProducer && <TrackControl />} */}
+
+        {sortedPeerList.map((peer) =>
+          peer.id !== peerId
+            ? Object.entries(peer.media).map(([mediaTag, info]) => (
+                <TrackControl
+                  key={`${peer.id}-${mediaTag}`}
+                  peerName={peer.id}
+                  mediaTag={mediaTag}
+                  mediaInfo={info}
+                  peerId={peerId}
+                />
+              ))
+            : null
+        )}
+      </div>
 
       <button
         onClick={shareCameraStreams}
