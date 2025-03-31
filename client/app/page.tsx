@@ -3,6 +3,7 @@ import { Device } from 'mediasoup-client'
 import { RtpCapabilities } from 'mediasoup-client/lib/RtpParameters'
 import {
   AppData,
+  Consumer,
   DtlsParameters,
   IceCandidate,
   IceParameters,
@@ -50,6 +51,8 @@ export default function Home() {
     null
   )
 
+  const [consumers, setConsumers] = useState<Consumer[]>([])
+
   // --------------transport-states--------------
   const [transport, setTransport] = useState<Transport | null>(null)
 
@@ -61,6 +64,7 @@ export default function Home() {
   const roomIdInputRef = useRef<string>('')
   const sendTransportRef = useRef<Transport | null>(null)
   const lastPollSyncDataRef = useRef<peersType | null>(null)
+
   useEffect(() => {
     const ws = new WebSocket(wsUrl)
 
@@ -197,58 +201,82 @@ export default function Home() {
     data: { activeSpeaker: activeSpeakerType; peers: peersType }
   }) {
     const { activeSpeaker, peers } = message.data
+
     setCurrentActiveSpeaker(activeSpeaker)
     setPeers(peers)
 
-    // always update bandwidth stats and active speaker display
-    //---->  // updateActiveSpeaker();
-    //---->  // updateCamVideoProducerStatsDisplay();
-    //---->  // updateScreenVideoProducerStatsDisplay();
-    //---->  // updateConsumersStatsDisplay();
+    let updatedConsumers = [...consumers]
 
-    // decide if we need to update tracks list and video/audio
-    // elements. build list of peers, sorted by join time, removing last
-    // seen time and stats, so we can easily do a deep-equals
-    // comparison. compare this list with the cached list from last
-    // poll.
+    for (let id in lastPollSyncData) {
+      if (!peers[id]) {
+        updatedConsumers = updatedConsumers.filter(
+          (consumer) => consumer.appData.peerId !== id
+        )
 
-    let currentSortedPeerList = sortPeers(peers)
-
-    setSortedPeerList(currentSortedPeerList)
-
-    let lastSortedPeerList: {
-      id: string
-      joinTs: any
-      media: any
-    }[] = []
-
-    if (lastPollSyncDataRef.current) {
-      lastSortedPeerList = sortPeers(lastPollSyncDataRef.current)
+        console.log('this is updated consumers:', updatedConsumers)
+      }
     }
 
-    console.log(
-      `this is the currentSortedPeerList: `,
-      currentSortedPeerList,
-      '\n\n'
-    )
-    // console.log(`this is the lastSortedPeerList: `, lastSortedPeerList, '\n\n')
-
-    if (!deepEqual(currentSortedPeerList, lastSortedPeerList)) {
-      // need to update the display here
-      // updateDisplay(peers, currentSortedPeerList)
-    }
-
-    // if a peer has gone away, we need to close all consumers we have
-    // for that peer and remove video and audio elements
-
-    // if a peer has stopped sending media that we are consuming, we
-    // need to close the consumer and remove video and audio elements
-
-    console.log(`this is peers : `, peers)
-
-    setLastPollSyncData(peers)
-    lastPollSyncDataRef.current = peers
+    setConsumers(updatedConsumers)
   }
+
+  // function handleOnSync(message: {
+  //   type: string
+  //   data: { activeSpeaker: activeSpeakerType; peers: peersType }
+  // }) {
+  //   const { activeSpeaker, peers } = message.data
+  //   setCurrentActiveSpeaker(activeSpeaker)
+  //   setPeers(peers)
+
+  // always update bandwidth stats and active speaker display
+  //---->  // updateActiveSpeaker();
+  //---->  // updateCamVideoProducerStatsDisplay();
+  //---->  // updateScreenVideoProducerStatsDisplay();
+  //---->  // updateConsumersStatsDisplay();
+
+  // decide if we need to update tracks list and video/audio
+  // elements. build list of peers, sorted by join time, removing last
+  // seen time and stats, so we can easily do a deep-equals
+  // comparison. compare this list with the cached list from last
+  // poll.
+
+  // let currentSortedPeerList = sortPeers(peers)
+
+  // setSortedPeerList(currentSortedPeerList)
+
+  // let lastSortedPeerList: {
+  //   id: string
+  //   joinTs: any
+  //   media: any
+  // }[] = []
+
+  // if (lastPollSyncDataRef.current) {
+  //   lastSortedPeerList = sortPeers(lastPollSyncDataRef.current)
+  // }
+
+  // console.log(
+  //   `this is the currentSortedPeerList: `,
+  //   currentSortedPeerList,
+  //   '\n\n'
+  // )
+  // console.log(`this is the lastSortedPeerList: `, lastSortedPeerList, '\n\n')
+
+  // if (!deepEqual(currentSortedPeerList, lastSortedPeerList)) {
+  // need to update the display here
+  // updateDisplay(peers, currentSortedPeerList)
+  // }
+
+  // if a peer has gone away, we need to close all consumers we have
+  // for that peer and remove video and audio elements
+
+  // if a peer has stopped sending media that we are consuming, we
+  // need to close the consumer and remove video and audio elements
+
+  //   console.log(`this is peers : `, peers)
+
+  //   setLastPollSyncData(peers)
+  //   lastPollSyncDataRef.current = peers
+  // }
 
   async function handleRouterCapabilities(message: {
     type: string
@@ -562,6 +590,21 @@ export default function Home() {
     roomIdInputRef.current = e.target.value
   }
 
+  function subscribeToTrack(peerId: string, mediaTag: string) {
+    console.log(`subscribed to track`)
+  }
+
+  function unsubscribeFromTrack(peerId: string, mediaTag: string) {
+    console.log(`unsubscribe to track`)
+  }
+
+  function pauseConsumer(consumer: Consumer) {
+    console.log(`pausing the fucking consumer`)
+  }
+  function resumeConsumer(consumer: Consumer) {
+    console.log(`resuming the fucking consumer`)
+  }
+
   // --------------------utils-----------------
 
   //
@@ -644,17 +687,33 @@ export default function Home() {
       <div className="flex border border-amber-500">
         {camVideoProducer && (
           <TrackControl
+            peers={peers!}
             peerName="my"
             mediaTag="cam-video"
             mediaInfo={peers && peers[peerId]?.media?.['cam-video']}
+            myPeerId={peerId}
+            createTransport={createTransport}
+            consumer={undefined}
+            onSubscribe={subscribeToTrack}
+            onUnsubscribe={unsubscribeFromTrack}
+            onPauseConsumer={pauseConsumer}
+            onResumeConsumer={resumeConsumer}
           />
         )}
 
         {camAudioProducer && (
           <TrackControl
+            peers={peers!}
             peerName="my"
             mediaTag="cam-audio"
             mediaInfo={peers && peers[peerId].media?.['cam-audio']}
+            myPeerId={peerId}
+            createTransport={createTransport}
+            consumer={undefined}
+            onSubscribe={subscribeToTrack}
+            onUnsubscribe={unsubscribeFromTrack}
+            onPauseConsumer={pauseConsumer}
+            onResumeConsumer={resumeConsumer}
           />
         )}
 
@@ -662,19 +721,49 @@ export default function Home() {
 
         {/* {camVideoProducer && <TrackControl />} */}
 
-        {sortedPeerList.map((peer) =>
+        {/* {sortedPeerList.map((peer) =>
           peer.id !== peerId
             ? Object.entries(peer.media).map(([mediaTag, info]) => (
                 <TrackControl
                   key={`${peer.id}-${mediaTag}`}
                   peerName={peer.id}
                   mediaTag={mediaTag}
-                  mediaInfo={info}
-                  peerId={peerId}
+                  mediaInfo={info as Object}
+                  myPeerId={peerId}
+                  createTransport={createTransport}
                 />
               ))
             : null
-        )}
+        )} */}
+
+        {peers &&
+          sortPeers(peers).map(
+            (peer) =>
+              peer.id !== peerId &&
+              Object.entries(peer.media).map(([mediaTag, info]) => {
+                const consumer = consumers.find(
+                  (c) =>
+                    c.appData.peerId === peer.id &&
+                    c.appData.mediaTag === mediaTag
+                )
+                return (
+                  <TrackControl
+                    peers={peers}
+                    key={`${peer.id}-${mediaTag}`}
+                    peerName={peer.id}
+                    mediaTag={mediaTag}
+                    mediaInfo={info as any}
+                    myPeerId={peerId}
+                    createTransport={createTransport}
+                    consumer={consumer}
+                    onSubscribe={subscribeToTrack}
+                    onUnsubscribe={unsubscribeFromTrack}
+                    onPauseConsumer={pauseConsumer}
+                    onResumeConsumer={resumeConsumer}
+                  />
+                )
+              })
+          )}
       </div>
 
       <button

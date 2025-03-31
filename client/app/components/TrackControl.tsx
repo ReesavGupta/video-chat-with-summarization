@@ -1,48 +1,76 @@
+import { Consumer } from 'mediasoup-client/lib/Consumer'
 import { useState } from 'react'
+import { peersType } from '../types'
 
 export default function TrackControl({
+  peers,
   peerName,
   mediaTag,
   mediaInfo,
   myPeerId,
+  createTransport,
+  consumer,
+  onSubscribe,
+  onUnsubscribe,
+  onPauseConsumer,
+  onResumeConsumer,
 }: {
+  peers: peersType
   peerName: string
   mediaTag: string
-  mediaInfo: {}
+  mediaInfo: { paused: boolean }
   myPeerId: string
+  createTransport: (direction: string) => void
+  consumer: Consumer | undefined
+  onSubscribe: (peerId: string, mediaTag: string) => void
+  onUnsubscribe: (peerId: string, mediaTag: string) => void
+  onPauseConsumer: (consumer: Consumer) => void
+  onResumeConsumer: (consumer: Consumer) => void
 }) {
   const peerId = peerName === 'my' ? myPeerId : peerName
 
-  const consumer = findConsumerForTrack(peerId, mediaTag)
+  // const consumer = findConsumerForTrack(peerId, mediaTag)
 
-  const [isChecked, setIsChecked] = useState(
-    consumer ? !consumer.paused : false
-  )
+  // const [isChecked, setIsChecked] = useState(
+  //   consumer ? !consumer.paused : false
+  // )
 
-  const toggleConsumer = async () => {
-    if (consumer) {
-      if (isChecked) {
-        await pauseConsumer()
-      } else {
-        await resumeConsumer()
-      }
-      setIsChecked(!isChecked)
-    }
-  }
+  // const toggleConsumer = async () => {
+  //   if (consumer) {
+  //     if (isChecked) {
+  //       await pauseConsumer()
+  //     } else {
+  //       await resumeConsumer()
+  //     }
+  //     setIsChecked(!isChecked)
+  //   }
+  // }
+
+  // function handleSubscribe(peerId: string, mediaTag: string) {
+  //   console.log(`we are subscribing:`, peerId, mediaTag)
+
+  //   if (!recvTransport) {
+  //     createTransport('recv')
+  //   }
+  // }
 
   return (
-    <div className={`track-subscribe track-subscribe-${peerId}`}>
-      <button
-        onClick={() =>
-          consumer
-            ? handleUnsubscribe(peerId, mediaTag)
-            : handleSubscribe(peerId, mediaTag)
-        }
-      >
-        {consumer ? 'Unsubscribe' : 'Subscribe'}
-      </button>
+    <div
+    // className={`track-subscribe track-subscribe-${peerId} ${
+    //   currentActiveSpeaker?.peerId === peerId ? 'active-speaker' : ''
+    // }`}
+    >
+      {!consumer ? (
+        <button onClick={() => onSubscribe(peerId, mediaTag)}>subscribe</button>
+      ) : (
+        <button onClick={() => onUnsubscribe(peerId, mediaTag)}>
+          unsubscribe
+        </button>
+      )}
 
-      <span>{`${peerName} ${mediaTag}`}</span>
+      <span>
+        {peerName} {mediaTag}
+      </span>
 
       {mediaInfo && (
         <span>
@@ -51,28 +79,36 @@ export default function TrackControl({
       )}
 
       {consumer && (
-        <span className="nowrap">
-          <input
-            type="checkbox"
-            checked={isChecked}
-            onChange={toggleConsumer}
-          />
-          <label id={`consumer-stats-${consumer.id}`}>
-            {consumer.paused
-              ? '[consumer paused]'
-              : `[consumer playing ${Math.floor(
-                  (lastPollSyncData[myPeerId]?.stats[consumer.id]?.bitrate ||
-                    0) / 1000
-                )} kb/s]`}
-          </label>
-        </span>
-      )}
+        <>
+          <span className="nowrap">
+            <input
+              type="checkbox"
+              checked={!consumer.paused}
+              onChange={(e) => {
+                e.target.checked
+                  ? onResumeConsumer(consumer)
+                  : onPauseConsumer(consumer)
+              }}
+            />
+            <label id={`consumer-stats-${consumer.id}`}>
+              {consumer.paused
+                ? '[consumer paused]'
+                : `[consumer playing ${Math.floor(
+                    (peers[myPeerId]?.stats?.[consumer.id]?.bitrate || 0) / 1000
+                  )} kb/s]`}
+            </label>
+          </span>
 
-      {consumer?.kind === 'video' && (
-        <span
-          className="nowrap track-ctrl"
-          id={`track-ctrl-${consumer.producerId}`}
-        />
+          {/* {consumer.kind === 'video' && (
+            <ProducerTrackSelector
+              consumer={consumer}
+              peerId={peerId}
+              producerId={consumer.producerId}
+              stats={peers[myPeerId]?.stats || {}}
+              consumerLayers={peers[myPeerId]?.consumerLayers || {}}
+            />
+          )} */}
+        </>
       )}
     </div>
   )
