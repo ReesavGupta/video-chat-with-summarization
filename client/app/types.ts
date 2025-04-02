@@ -3,6 +3,7 @@ import {
   DtlsParameters,
   IceCandidate,
   IceParameters,
+  MediaKind,
   RtpParameters,
 } from 'mediasoup-client/lib/types'
 
@@ -26,4 +27,12 @@ export type createTransportMessageType = {
   }
 }
 
-
+export type handleConsumerCreatedType = {
+  type: string
+  producerId: string
+  id: string
+  kind: MediaKind
+  rtpParameters: RtpParameters
+  consumerType: string
+  producerPaused: boolean
+}

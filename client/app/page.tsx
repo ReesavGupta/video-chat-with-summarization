@@ -1,6 +1,10 @@
 'use client'
 import { Device } from 'mediasoup-client'
-import { RtpCapabilities } from 'mediasoup-client/lib/RtpParameters'
+import {
+  MediaKind,
+  RtpCapabilities,
+  RtpParameters,
+} from 'mediasoup-client/lib/RtpParameters'
 import {
   AppData,
   Consumer,
@@ -14,6 +18,7 @@ import { useEffect, useState, useRef, ChangeEvent } from 'react'
 import {
   activeSpeakerType,
   createTransportMessageType,
+  handleConsumerCreatedType,
   peersType,
 } from './types'
 import TrackControl from './components/TrackControl'
@@ -96,6 +101,9 @@ export default function Home() {
           break
         case 'routerCapabilities':
           handleRouterCapabilities(message)
+          break
+        case 'consumerCreated':
+          handleConsumerCreated(message)
           break
       }
     }
@@ -634,6 +642,8 @@ export default function Home() {
 
     socketRef.current.send(JSON.stringify(message))
   }
+
+  function handleConsumerCreated(message: handleConsumerCreatedType) {}
 
   function unsubscribeFromTrack(peerId: string, mediaTag: string) {
     console.log(`unsubscribe to track`)
