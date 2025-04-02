@@ -17,6 +17,7 @@ import {
   peersType,
 } from './types'
 import TrackControl from './components/TrackControl'
+// import { error } from 'console'
 
 export default function Home() {
   const wsUrl = 'ws://localhost:3000'
@@ -57,12 +58,15 @@ export default function Home() {
   const [transport, setTransport] = useState<Transport | null>(null)
 
   const [sendTransport, setSendTransport] = useState<Transport | null>(null)
+  const [recvTransport, setRecvTransport] = useState<Transport | null>(null)
 
   // -----------Refs-----------------------------
   const syncIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const socketRef = useRef<WebSocket | null>(null)
   const roomIdInputRef = useRef<string>('')
   const sendTransportRef = useRef<Transport | null>(null)
+  const recvTransportRef = useRef<Transport | null>(null)
+
   const lastPollSyncDataRef = useRef<peersType | null>(null)
 
   useEffect(() => {
@@ -418,7 +422,7 @@ export default function Home() {
       JSON.stringify({
         type: 'createTransport',
         data: {
-          direction: 'send',
+          direction: direction,
           peerId,
           roomId: roomIdInputRef.current,
         },
@@ -444,6 +448,12 @@ export default function Home() {
           sendTransportRef.current = transport
         } else if (direction === 'recv') {
           transport = device.createRecvTransport(message.data.transportOptions)
+          setRecvTransport(transport)
+          recvTransportRef.current = transport
+          console.log(
+            `this is the recieve transport:`,
+            recvTransportRef.current
+          )
         } else {
           console.error(`bad transport direction `)
           return
@@ -590,8 +600,39 @@ export default function Home() {
     roomIdInputRef.current = e.target.value
   }
 
-  function subscribeToTrack(peerId: string, mediaTag: string) {
-    console.log(`subscribed to track`)
+  function subscribeToTrack(subToPeerId: string, mediaTag: string) {
+    console.log(`inside subscribe to track`)
+
+    // create a receive transport if we don't already have one
+
+    if (!recvTransport) {
+      createTransport('recv')
+    }
+
+    let consumer = findConsumerTrack(subToPeerId, mediaTag)
+
+    if (consumer) {
+      console.error('already have consumer for track', subToPeerId, mediaTag)
+      return
+    }
+
+    // ask the server to create a server-side consumer object and send
+    // us back the info we need to create a client-side consumer
+    if (!socketRef.current) {
+      console.error(`no socket inside subscribe to track`)
+      return
+    }
+
+    const message = {
+      type: 'createConsumer',
+      roomId: roomIdInputRef.current,
+      peerId,
+      mediaTag,
+      mediaPeerId: subToPeerId,
+      rtpCapabilities: device?.rtpCapabilities,
+    }
+
+    socketRef.current.send(JSON.stringify(message))
   }
 
   function unsubscribeFromTrack(peerId: string, mediaTag: string) {
@@ -645,6 +686,7 @@ export default function Home() {
       }))
       .sort((a, b) => (a.joinTs > b.joinTs ? 1 : b.joinTs > a.joinTs ? -1 : 0))
   }
+
   function deepEqual<T>(arr1: T[], arr2: T[]): boolean {
     if (arr1.length !== arr2.length) return false
 
@@ -657,6 +699,14 @@ export default function Home() {
 
       return JSON.stringify(obj1) === JSON.stringify(obj2)
     })
+  }
+
+  function findConsumerTrack(peerId: string, mediaTag: string) {
+    return consumers.find(
+      (consumer) =>
+        consumer.appData.peerId === peerId &&
+        consumer.appData.mediaTag === mediaTag
+    )
   }
 
   return (

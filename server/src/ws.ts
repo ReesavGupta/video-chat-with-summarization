@@ -6,11 +6,14 @@ import { createWebRtcTransport } from './lib/createWebRtcTransport'
 import type { DtlsParameters } from 'mediasoup/node/lib/WebRtcTransportTypes'
 import type {
   AppData,
+  Consumer,
   Producer,
+  RtpCapabilities,
   RtpParameters,
   Transport,
 } from 'mediasoup/node/lib/types'
 import type { HandleSendTrackMessageType } from './types/types'
+import { sleep } from 'bun'
 
 export const createConnection = async (
   wss: WebSocketServer,
@@ -45,6 +48,9 @@ export const createConnection = async (
           break
         case 'send-track':
           handleSendTrack(message, socket)
+          break
+        case 'createConsumer':
+          handleCreateConsumer(message, socket)
           break
       }
     })
@@ -255,6 +261,152 @@ export const createConnection = async (
     })
     socket.send(msg)
   }
+
+  //
+  // create a mediasoup consumer object, hook it up to a producer here
+  // on the server side, and send back info needed to create a consumer
+  // object on the client side. always start consumers paused. client
+  // will request media to resume when the connection completes
+  //
+  async function handleCreateConsumer(
+    message: {
+      type: string
+      peerId: string
+      roomId: string
+      mediaTag: string
+      mediaPeerId: string
+      rtpCapabilities: RtpCapabilities
+    },
+    socket: WebSocket
+  ) {
+    const room = rooms.get(message.roomId)
+
+    if (!room) {
+      console.error(`this is an invalid roomId`)
+      return
+    }
+
+    // p.appData ------->
+    // {
+    //   mediaTag: "cam-video",
+    //   peerId: "36314c52-c5bb-4dc8-b696-20769c5ca814",
+    //   transportId: "7bfa7b88-4f4b-4c13-a1c8-856697070255",
+    // }
+    // {
+    //   mediaTag: "cam-audio",
+    //   peerId: "36314c52-c5bb-4dc8-b696-20769c5ca814",
+    //   transportId: "7bfa7b88-4f4b-4c13-a1c8-856697070255",
+    // }
+
+    const producer: Producer = Object.values(room.producers).find((p) => {
+      return (
+        p.appData.mediaTag === message.mediaTag &&
+        p.appData.peerId === message.mediaPeerId
+      )
+    })
+
+    // console.log(`\n\n\n\nthis is the producer:`, producer, '\n\n\n\n')
+
+    if (!producer) {
+      console.error(`cannot find the producer`)
+      return
+    }
+
+    if (
+      !router.canConsume({
+        producerId: producer.id,
+        rtpCapabilities: message.rtpCapabilities,
+      })
+    ) {
+      console.error(`client is incapable of consuming the producer`)
+      return
+    }
+
+    // it looks like we need to wait for the transport to be created first.
+    // if i didnot do this what was happening is ----> the code below could not find the created transport as we were trying to find the trasnport before its creation
+    //so we sleep for 500 ms
+
+    //not optimal but this is what we gotta do
+
+    await sleep(500)
+
+    const transport: Transport = Object.values(room.transports).find(
+      (trans) => {
+        console.log(
+          trans.appData.peerId === message.peerId &&
+            trans.appData.clientDirection === 'recv'
+        )
+        return (
+          trans.appData.peerId === message.peerId &&
+          trans.appData.clientDirection === 'recv'
+        )
+      }
+    )
+
+    const consumer: Consumer<AppData> = await transport.consume({
+      producerId: producer.id,
+      rtpCapabilities: message.rtpCapabilities,
+      paused: true, // see note above about always starting paused
+      appData: {
+        peerId: message.peerId,
+        mediaTag: message.mediaTag,
+        mediaPeerId: message.mediaPeerId,
+      },
+    })
+
+    // need both 'transportclose' and 'producerclose' event handlers,
+    // to make sure we close and clean up consumers in all
+    // circumstances
+
+    consumer.on('transportclose', () => {
+      console.log(`consumers transport closed (consumer id):`, consumer.id)
+      closeConsumer(consumer)
+    })
+
+    consumer.on('producerclose', () => {
+      console.log(`consumers producer closed (consumer id):`, consumer.id)
+      closeConsumer(consumer)
+    })
+
+    // stick this consumer in our list of consumers to keep track of,
+    // and create a data structure to track the client-relevant state
+    // of this consumer
+
+    room.consumers[consumer.id] = consumer
+    room.peers[message.peerId].consumerLayers[consumer.id] = {
+      currentLayer: null,
+      clientSelectedLayer: null,
+    }
+
+    console.log(`this is the transport:`, transport)
+
+    // on layer change
+    consumer.on('layerschange', (layers) => {
+      console.log(
+        `consumer layer change: ${message.mediaPeerId} ----> ${message.peerId}`,
+        message.mediaTag,
+        layers
+      )
+
+      if (
+        room.peers[message.peerId] &&
+        room.peers[message.peerId].consumerLayers[consumer.id]
+      ) {
+        room.peers[message.peerId].consumerLayers[consumer.id].currentLayer =
+          layers && layers.spatialLayer
+      }
+    })
+    const msg = {
+      type: 'consumerCreated',
+      producerId: producer.id,
+      id: consumer.id,
+      kind: consumer.kind,
+      rtpParameters: consumer.rtpParameters,
+      consumerType: consumer.type,
+      producerPaused: consumer.producerPaused,
+    }
+    socket.send(JSON.stringify(msg))
+  }
 }
 
 // ------------------------utilities----------------------------------
@@ -276,4 +428,11 @@ async function closeProducer(producer: Producer, room: Room) {
     console.error(`some error while closing up the producer`)
     return
   }
+}
+
+async function closeConsumer(consumer: Consumer) {
+  await consumer.close()
+  // remove this consumer from our roomState.consumers list
+
+  // remove layer info from from our roomState...consumerLayers bookkeeping
 }
