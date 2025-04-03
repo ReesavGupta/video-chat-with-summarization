@@ -22,6 +22,7 @@ import {
   peersType,
 } from './types'
 import TrackControl from './components/TrackControl'
+import { RemoteAudio, RemoteVideo } from './components/RemoteStreams'
 // import { error } from 'console'
 
 export default function Home() {
@@ -73,7 +74,7 @@ export default function Home() {
   const recvTransportRef = useRef<Transport | null>(null)
 
   const consumerRef = useRef<Consumer | null>(null)
-
+  const consumersRef = useRef<Consumer[]>([])
   const lastPollSyncDataRef = useRef<peersType | null>(null)
 
   useEffect(() => {
@@ -230,7 +231,7 @@ export default function Home() {
         console.log('this is updated consumers:', updatedConsumers)
       }
     }
-
+    console.log(`this is the consumers:`, consumers)
     setConsumers(updatedConsumers)
   }
 
@@ -638,6 +639,14 @@ export default function Home() {
                 )
                 resumeConsumer(consumerRef.current!)
 
+                consumersRef.current.push(consumerRef.current!)
+                // consumers.push(consumerRef.current!)
+                console.log(
+                  `this is consumers after push:`,
+                  consumersRef.current
+                )
+                // addVidoAudio()
+
                 break
               case 'failed':
                 console.log(`connection failed`)
@@ -724,7 +733,7 @@ export default function Home() {
         const msg = JSON.parse(event.data)
         if (msg.type === 'consumerCreated') {
           console.log(`this is message inside the event listener:`, msg)
-          
+
           const {
             consumerType,
             id,
@@ -1019,6 +1028,41 @@ export default function Home() {
       >
         Camera
       </button>
+
+      <div>
+        {/* for video and audio */}
+        <div
+          id="remote-video"
+          className="border h-48"
+        >
+          {consumersRef.current.map((consumer) => {
+            // console.log(`consumer inside map:`, consumer)
+            return (
+              consumer.kind === 'video' && (
+                <RemoteVideo
+                  key={consumer.id}
+                  consumer={consumer}
+                />
+              )
+            )
+          })}
+        </div>
+
+        <div
+          id="remote-audio"
+          className="border h-48"
+        >
+          {consumersRef.current.map(
+            (consumer) =>
+              consumer.kind === 'audio' && (
+                <RemoteAudio
+                  key={consumer.id}
+                  consumer={consumer}
+                />
+              )
+          )}
+        </div>
+      </div>
     </div>
   )
 }
