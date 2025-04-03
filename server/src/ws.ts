@@ -52,6 +52,9 @@ export const createConnection = async (
         case 'createConsumer':
           handleCreateConsumer(message, socket)
           break
+        case 'resume':
+          handleResume(message, socket)
+          break
       }
     })
   })
@@ -396,6 +399,7 @@ export const createConnection = async (
           layers && layers.spatialLayer
       }
     })
+
     const msg = {
       type: 'consumerCreated',
       producerId: producer.id,
@@ -406,6 +410,40 @@ export const createConnection = async (
       producerPaused: consumer.producerPaused,
     }
     socket.send(JSON.stringify(msg))
+  }
+
+  async function handleResume(
+    message: {
+      type: string
+      roomId: string
+      peerId: string
+      consumerId: string
+    },
+    socket: WebSocket
+  ) {
+    // console.log(`this is the message:`, message)
+    const room = rooms.get(message.roomId)
+
+    if (room) {
+      const consumer: Consumer | undefined = Object.entries(room.consumers)
+        .map(([cId, c]) => (cId === message.consumerId ? c : undefined))
+        .find((c) => c !== undefined)
+
+      console.log(`this is the consumer:`, consumer)
+
+      if (!consumer) {
+        console.error(`consumer not found`)
+        return
+      }
+
+      await consumer.resume()
+
+      socket.send(
+        JSON.stringify({
+          type: 'resumed',
+        })
+      )
+    }
   }
 }
 

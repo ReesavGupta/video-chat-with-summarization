@@ -72,6 +72,8 @@ export default function Home() {
   const sendTransportRef = useRef<Transport | null>(null)
   const recvTransportRef = useRef<Transport | null>(null)
 
+  const consumerRef = useRef<Consumer | null>(null)
+
   const lastPollSyncDataRef = useRef<peersType | null>(null)
 
   useEffect(() => {
@@ -102,9 +104,9 @@ export default function Home() {
         case 'routerCapabilities':
           handleRouterCapabilities(message)
           break
-        case 'consumerCreated':
-          handleConsumerCreated(message)
-          break
+        // case 'consumerCreated':
+        //   handleConsumerCreated(message)
+        //   break
       }
     }
 
@@ -474,39 +476,85 @@ export default function Home() {
         // server, then call callback() on success or errback() on failure.
 
         console.log(`this is your client side transport: `, transport)
+        recvTransportRef.current
+          ? recvTransportRef.current.on(
+              'connect',
+              ({ dtlsParameters }, callback, errback) => {
+                console.log(`you are inside the transport-connect event`)
 
-        transport.on('connect', ({ dtlsParameters }, callback, errback) => {
-          console.log(`you are inside the transport-connect event`)
+                if (!socketRef.current) {
+                  console.error(
+                    `there is no socket inside the transport connect event`
+                  )
+                  return
+                }
 
-          if (!socketRef.current) {
-            console.error(
-              `there is no socket inside the transport connect event`
+                socketRef.current.send(
+                  JSON.stringify({
+                    type: 'connectTransport',
+                    data: {
+                      transportId: recvTransportRef.current?.id,
+                      dtlsParameters,
+                      roomId: roomIdInputRef.current,
+                    },
+                  })
+                )
+
+                const messageHandler = (event: MessageEvent) => {
+                  const message = JSON.parse(event.data.toString())
+                  if (message.type === 'connected' && socketRef.current) {
+                    console.log(
+                      `transport is connected sucessfully and the direction is: ${direction}`
+                    )
+                    callback()
+                    socketRef.current.removeEventListener(
+                      'message',
+                      messageHandler
+                    ) // Cleanup
+                  }
+                }
+                socketRef.current.addEventListener('message', messageHandler)
+              }
             )
-            return
-          }
+          : sendTransportRef.current?.on(
+              'connect',
+              ({ dtlsParameters }, callback, errback) => {
+                console.log(`you are inside the transport-connect event`)
 
-          socketRef.current.send(
-            JSON.stringify({
-              type: 'connectTransport',
-              data: {
-                transportId: transport.id,
-                dtlsParameters,
-                roomId: roomIdInputRef.current,
-              },
-            })
-          )
+                if (!socketRef.current) {
+                  console.error(
+                    `there is no socket inside the transport connect event`
+                  )
+                  return
+                }
 
-          const messageHandler = (event: MessageEvent) => {
-            const message = JSON.parse(event.data.toString())
-            if (message.type === 'connected' && socketRef.current) {
-              console.log(`transport is connected sucessfully`)
-              callback()
-              socketRef.current.removeEventListener('message', messageHandler) // Cleanup
-            }
-          }
-          socketRef.current.addEventListener('message', messageHandler)
-        })
+                socketRef.current.send(
+                  JSON.stringify({
+                    type: 'connectTransport',
+                    data: {
+                      transportId: transport.id,
+                      dtlsParameters,
+                      roomId: roomIdInputRef.current,
+                    },
+                  })
+                )
 
+                const messageHandler = (event: MessageEvent) => {
+                  const message = JSON.parse(event.data.toString())
+                  if (message.type === 'connected' && socketRef.current) {
+                    console.log(
+                      `transport is connected sucessfully and the direction is: ${direction}`
+                    )
+                    callback()
+                    socketRef.current.removeEventListener(
+                      'message',
+                      messageHandler
+                    ) // Cleanup
+                  }
+                }
+                socketRef.current.addEventListener('message', messageHandler)
+              }
+            )
         if (direction === 'send') {
           // sending transports will emit a produce event when a new track
           // needs to be set up to start sending. the producer's appData is
@@ -567,6 +615,34 @@ export default function Home() {
               )
             }
           )
+        } else if (direction === 'recv') {
+          recvTransportRef.current?.on('connectionstatechange', (state) => {
+            console.log(`this is the state of the connection: ${state}`)
+
+            switch (state) {
+              case 'new':
+                console.log(`new connection instantiated :thumbsup:`)
+                break
+              case 'connecting':
+                console.log(`we are getting connected...`)
+                break
+              case 'connected':
+                console.log('we are in !!! :D')
+                // okay, we're ready. let's ask the peer to send us media
+                // the server-side consumer will be started in paused state. wait
+                // until we're connected, then send a resume request to the server
+                // to get our first keyframe and start displaying video
+                console.log(
+                  `this is the consumerRef after connection:`,
+                  consumerRef.current
+                )
+                resumeConsumer(consumerRef.current!)
+
+                break
+              case 'failed':
+                console.log(`connection failed`)
+            }
+          })
         }
       } else {
         return
@@ -641,6 +717,101 @@ export default function Home() {
     }
 
     socketRef.current.send(JSON.stringify(message))
+
+    socketRef.current.addEventListener(
+      'message',
+      async (event: MessageEvent) => {
+        const msg = JSON.parse(event.data)
+        if (msg.type === 'consumerCreated') {
+          console.log(`this is message inside the event listener:`, msg)
+          
+          const {
+            consumerType,
+            id,
+            kind,
+            producerId,
+            producerPaused,
+            rtpParameters,
+            type,
+          }: {
+            consumerType: string
+            id: string
+            kind: MediaKind
+            producerId: string
+            producerPaused: boolean
+            rtpParameters: RtpParameters
+            type: string
+          } = msg
+
+          if (!recvTransportRef.current) {
+            console.log(`no recieve transport inside event listener`)
+            return
+          }
+
+          const consumer = await recvTransportRef.current.consume({
+            rtpParameters,
+            kind,
+            id,
+            producerId,
+            appData: { peerId, mediaTag },
+          })
+
+          consumerRef.current = consumer
+
+          // the server-side consumer will be started in paused state. wait
+          // until we're connected, then send a resume request to the server
+          // to get our first keyframe and start displaying video
+
+          // *********************************************************
+          // *********************************************************
+          // *********************************************************
+          // *********************************************************
+          // *********************************************************
+          // *********************************************************
+          // *********************************************************
+          // *********************************************************
+          // *********************************************************
+          // *********************************************************
+
+          /*
+          
+          -> the approach did not work for some reason: as i see it it must be because the recvTransport is taing a long time in getting connected
+
+          -> im not sure though :D
+
+          -> to tackle this problem what i did is, in line no: 616 we listen to a connectionStateChange event and when connected we do the rest.  for some reason it works that way but the later doesnt do justice TwT  
+
+          */
+
+          // while (
+          //   recvTransportRef.current &&
+          //   recvTransportRef.current.connectionState !== 'connected'
+          // ) {
+          //   console.log(
+          //     `recvTransport connection state: ${recvTransportRef.current?.connectionState}`
+          //   )
+          //   new Promise((resolve) => setTimeout(resolve, 1000)) //equivalent to bun.sleep(100)
+          //   // console.log(`the promise has resoce`)
+          // }
+
+          // console.log(
+          //   `this is the transportref.current: `,
+          //   recvTransportRef.current.connectionState
+          // )
+
+          // *********************************************************
+          // *********************************************************
+          // *********************************************************
+          // *********************************************************
+          // *********************************************************
+          // *********************************************************
+          // *********************************************************
+          // *********************************************************
+          // *********************************************************
+          // *********************************************************
+        }
+      }
+    )
   }
 
   function handleConsumerCreated(message: handleConsumerCreatedType) {}
@@ -653,7 +824,23 @@ export default function Home() {
     console.log(`pausing the fucking consumer`)
   }
   function resumeConsumer(consumer: Consumer) {
-    console.log(`resuming the fucking consumer`)
+    if (!consumer) {
+      console.error(`there is no consumer inside resume consumer`)
+      return
+    }
+    socketRef.current?.send(
+      JSON.stringify({
+        type: 'resume',
+        roomId: roomIdInputRef.current,
+        peerId: peerId,
+        consumerId: consumer.id,
+      })
+    )
+    consumer.resume()
+    try {
+    } catch (error) {
+      console.error(error)
+    }
   }
 
   // --------------------utils-----------------
