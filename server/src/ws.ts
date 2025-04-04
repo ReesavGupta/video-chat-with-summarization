@@ -25,7 +25,7 @@ export const createConnection = async (
     socket.on('message', async (event: string) => {
       const message = JSON.parse(event)
 
-      console.log(`this is the message:`, message)
+      // console.log(`this is the message:`, message)
 
       switch (message.type) {
         case 'join-room':

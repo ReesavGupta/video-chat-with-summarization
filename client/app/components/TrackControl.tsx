@@ -61,15 +61,23 @@ export default function TrackControl({
     // }`}
     >
       {!consumer ? (
-        <button onClick={() => onSubscribe(peerId, mediaTag)}>subscribe</button>
+        <button
+          onClick={() => onSubscribe(peerId, mediaTag)}
+          className="m-3"
+        >
+          subscribe
+        </button>
       ) : (
-        <button onClick={() => onUnsubscribe(peerId, mediaTag)}>
+        <button
+          onClick={() => onUnsubscribe(peerId, mediaTag)}
+          className="m-3"
+        >
           unsubscribe
         </button>
       )}
 
-      <span>
-        {peerName} {mediaTag}
+      <span className="bg-amber-500">
+        {peerName} ----- {mediaTag}
       </span>
 
       {mediaInfo && (

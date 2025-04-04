@@ -19,6 +19,7 @@ export function RemoteVideo({ consumer }: { consumer: Consumer }) {
   return (
     <div>
       <video
+        autoPlay={true}
         className="border border-red-600"
         ref={videoRef}
         playsInline
