@@ -88,23 +88,26 @@ export default function TrackControl({
 
       {consumer && (
         <>
-          <span className="nowrap">
-            <input
-              type="checkbox"
-              checked={!consumer.paused}
-              onChange={(e) => {
-                e.target.checked
-                  ? onResumeConsumer(consumer)
-                  : onPauseConsumer(consumer)
-              }}
-            />
-            <label id={`consumer-stats-${consumer.id}`}>
-              {consumer.paused
-                ? '[consumer paused]'
-                : `[consumer playing ${Math.floor(
-                    (peers[myPeerId]?.stats?.[consumer.id]?.bitrate || 0) / 1000
-                  )} kb/s]`}
-            </label>
+          <span className="flex flex-wrap border-amber-400">
+            <div>
+              <input
+                type="checkbox"
+                checked={!consumer.paused}
+                onChange={(e) => {
+                  e.target.checked
+                    ? onResumeConsumer(consumer)
+                    : onPauseConsumer(consumer)
+                }}
+              />
+              <label id={`consumer-stats-${consumer.id}`}>
+                {consumer.paused
+                  ? '[consumer paused]'
+                  : `[consumer playing ${Math.floor(
+                      (peers[myPeerId]?.stats?.[consumer.id]?.bitrate || 0) /
+                        1000
+                    )} kb/s]`}
+              </label>
+            </div>
           </span>
 
           {/* {consumer.kind === 'video' && (

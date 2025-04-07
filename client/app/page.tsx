@@ -1038,85 +1038,77 @@ export default function Home() {
         Get All Peers
       </button>
 
-      <div className="flex border border-amber-500">
-        {camVideoProducer && (
-          <TrackControl
-            peers={peers!}
-            peerName="my"
-            mediaTag="cam-video"
-            mediaInfo={peers && peers[peerId]?.media?.['cam-video']}
-            myPeerId={peerId}
-            createTransport={createTransport}
-            consumer={undefined}
-            onSubscribe={subscribeToTrack}
-            onUnsubscribe={unsubscribeFromTrack}
-            onPauseConsumer={pauseConsumer}
-            onResumeConsumer={resumeConsumer}
-          />
+      <div className="flex flex-col gap-4 border border-amber-500 p-2">
+        {/* My own media tracks */}
+        {(camVideoProducer || camAudioProducer) && (
+          <div className="flex gap-2">
+            {camVideoProducer && (
+              <TrackControl
+                peers={peers!}
+                peerName="my"
+                mediaTag="cam-video"
+                mediaInfo={peers && peers[peerId]?.media?.['cam-video']}
+                myPeerId={peerId}
+                createTransport={createTransport}
+                consumer={undefined}
+                onSubscribe={subscribeToTrack}
+                onUnsubscribe={unsubscribeFromTrack}
+                onPauseConsumer={pauseConsumer}
+                onResumeConsumer={resumeConsumer}
+              />
+            )}
+            {camAudioProducer && (
+              <TrackControl
+                peers={peers!}
+                peerName="my"
+                mediaTag="cam-audio"
+                mediaInfo={peers && peers[peerId]?.media?.['cam-audio']}
+                myPeerId={peerId}
+                createTransport={createTransport}
+                consumer={undefined}
+                onSubscribe={subscribeToTrack}
+                onUnsubscribe={unsubscribeFromTrack}
+                onPauseConsumer={pauseConsumer}
+                onResumeConsumer={resumeConsumer}
+              />
+            )}
+          </div>
         )}
 
-        {camAudioProducer && (
-          <TrackControl
-            peers={peers!}
-            peerName="my"
-            mediaTag="cam-audio"
-            mediaInfo={peers && peers[peerId].media?.['cam-audio']}
-            myPeerId={peerId}
-            createTransport={createTransport}
-            consumer={undefined}
-            onSubscribe={subscribeToTrack}
-            onUnsubscribe={unsubscribeFromTrack}
-            onPauseConsumer={pauseConsumer}
-            onResumeConsumer={resumeConsumer}
-          />
-        )}
-
-        {/* {camVideoProducer && <TrackControl />} */}
-
-        {/* {camVideoProducer && <TrackControl />} */}
-
-        {/* {sortedPeerList.map((peer) =>
-          peer.id !== peerId
-            ? Object.entries(peer.media).map(([mediaTag, info]) => (
-                <TrackControl
-                  key={`${peer.id}-${mediaTag}`}
-                  peerName={peer.id}
-                  mediaTag={mediaTag}
-                  mediaInfo={info as Object}
-                  myPeerId={peerId}
-                  createTransport={createTransport}
-                />
-              ))
-            : null
-        )} */}
-
+        {/* Remote peer media tracks */}
         {peers &&
           sortPeers(peers).map(
             (peer) =>
-              peer.id !== peerId &&
-              Object.entries(peer.media).map(([mediaTag, info]) => {
-                const consumer = consumersRef.current.find(
-                  (c) =>
-                    c.appData.peerId === peer.id &&
-                    c.appData.mediaTag === mediaTag
-                )
-                return (
-                  <TrackControl
-                    peers={peers}
-                    key={`${peer.id}-${mediaTag}`}
-                    peerName={peer.id}
-                    mediaTag={mediaTag}
-                    mediaInfo={info as any}
-                    myPeerId={peerId}
-                    createTransport={createTransport}
-                    consumer={consumer}
-                    onSubscribe={subscribeToTrack}
-                    onUnsubscribe={unsubscribeFromTrack}
-                    onPauseConsumer={pauseConsumer}
-                    onResumeConsumer={resumeConsumer}
-                  />
-                )
-              })
+              peer.id !== peerId && (
+                <div
+                  key={peer.id}
+                  className="flex gap-2 border border-green-500 rounded-md p-2"
+                >
+                  {Object.entries(peer.media).map(([mediaTag, info]) => {
+                    const consumer = consumersRef.current.find(
+                      (c) =>
+                        c.appData.peerId === peer.id &&
+                        c.appData.mediaTag === mediaTag
+                    )
+                    return (
+                      <TrackControl
+                        key={`${peer.id}-${mediaTag}`}
+                        peers={peers}
+                        peerName={peer.id}
+                        mediaTag={mediaTag}
+                        mediaInfo={info as any}
+                        myPeerId={peerId}
+                        createTransport={createTransport}
+                        consumer={consumer}
+                        onSubscribe={subscribeToTrack}
+                        onUnsubscribe={unsubscribeFromTrack}
+                        onPauseConsumer={pauseConsumer}
+                        onResumeConsumer={resumeConsumer}
+                      />
+                    )
+                  })}
+                </div>
+              )
           )}
       </div>
 
