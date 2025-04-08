@@ -23,6 +23,7 @@ import {
 } from './types'
 import TrackControl from './components/TrackControl'
 import { RemoteAudio, RemoteVideo } from './components/RemoteStreams'
+import AnimatedBackground from './components/AnimatedBackground'
 // import { error } from 'console'
 
 export default function Home() {
@@ -1014,143 +1015,146 @@ export default function Home() {
   }
 
   return (
-    <div>
-      <h2>Video Chat App</h2>
-      <input
-        type="text"
-        placeholder="Room ID"
-        value={roomIdInput}
-        onChange={(e) => onChangeHandler(e)}
-        className="border"
-      />
-      {!joinedRoom && (
+    <div className="min-h-screen flex flex-col justify-center items-center relative overflow-hidden p-4 z-10">
+      {/* <AnimatedBackground /> */}
+      <div className="z-10 w-full max-w-4xl ">
+        <h2>Let's Meet</h2>
+        <input
+          type="text"
+          placeholder="Room ID"
+          value={roomIdInput}
+          onChange={(e) => onChangeHandler(e)}
+          className="border"
+        />
+        {!joinedRoom && (
+          <button
+            onClick={handleJoinRoom}
+            className="border mx-1 bg-blue-700 text-white"
+          >
+            Join Room
+          </button>
+        )}
         <button
-          onClick={handleJoinRoom}
+          onClick={handleGetAllPeers}
           className="border mx-1 bg-blue-700 text-white"
         >
-          Join Room
+          Get All Peers
         </button>
-      )}
-      <button
-        onClick={handleGetAllPeers}
-        className="border mx-1 bg-blue-700 text-white"
-      >
-        Get All Peers
-      </button>
 
-      <div className="flex flex-col gap-4 border border-amber-500 p-2">
-        {/* My own media tracks */}
-        {(camVideoProducer || camAudioProducer) && (
-          <div className="flex gap-2">
-            {camVideoProducer && (
-              <TrackControl
-                peers={peers!}
-                peerName="my"
-                mediaTag="cam-video"
-                mediaInfo={peers && peers[peerId]?.media?.['cam-video']}
-                myPeerId={peerId}
-                createTransport={createTransport}
-                consumer={undefined}
-                onSubscribe={subscribeToTrack}
-                onUnsubscribe={unsubscribeFromTrack}
-                onPauseConsumer={pauseConsumer}
-                onResumeConsumer={resumeConsumer}
-              />
-            )}
-            {camAudioProducer && (
-              <TrackControl
-                peers={peers!}
-                peerName="my"
-                mediaTag="cam-audio"
-                mediaInfo={peers && peers[peerId]?.media?.['cam-audio']}
-                myPeerId={peerId}
-                createTransport={createTransport}
-                consumer={undefined}
-                onSubscribe={subscribeToTrack}
-                onUnsubscribe={unsubscribeFromTrack}
-                onPauseConsumer={pauseConsumer}
-                onResumeConsumer={resumeConsumer}
-              />
-            )}
-          </div>
-        )}
-
-        {/* Remote peer media tracks */}
-        {peers &&
-          sortPeers(peers).map(
-            (peer) =>
-              peer.id !== peerId && (
-                <div
-                  key={peer.id}
-                  className="flex gap-2 border border-green-500 rounded-md p-2"
-                >
-                  {Object.entries(peer.media).map(([mediaTag, info]) => {
-                    const consumer = consumersRef.current.find(
-                      (c) =>
-                        c.appData.peerId === peer.id &&
-                        c.appData.mediaTag === mediaTag
-                    )
-                    return (
-                      <TrackControl
-                        key={`${peer.id}-${mediaTag}`}
-                        peers={peers}
-                        peerName={peer.id}
-                        mediaTag={mediaTag}
-                        mediaInfo={info as any}
-                        myPeerId={peerId}
-                        createTransport={createTransport}
-                        consumer={consumer}
-                        onSubscribe={subscribeToTrack}
-                        onUnsubscribe={unsubscribeFromTrack}
-                        onPauseConsumer={pauseConsumer}
-                        onResumeConsumer={resumeConsumer}
-                      />
-                    )
-                  })}
-                </div>
-              )
-          )}
-      </div>
-
-      <button
-        onClick={shareCameraStreams}
-        className="border mx-1 bg-blue-700 text-white"
-      >
-        Camera
-      </button>
-
-      <div>
-        {/* for video and audio */}
-        <div
-          id="remote-video"
-          className="border h-48"
-        >
-          {consumersRef.current.map((consumer) => {
-            // console.log(`consumer inside map:`, consumer)
-            return (
-              consumer.kind === 'video' && (
-                <RemoteVideo
-                  key={consumer.id}
-                  consumer={consumer}
+        <div className="flex flex-col gap-4 border border-amber-500 p-2">
+          {/* My own media tracks */}
+          {(camVideoProducer || camAudioProducer) && (
+            <div className="flex gap-2">
+              {camVideoProducer && (
+                <TrackControl
+                  peers={peers!}
+                  peerName="my"
+                  mediaTag="cam-video"
+                  mediaInfo={peers && peers[peerId]?.media?.['cam-video']}
+                  myPeerId={peerId}
+                  createTransport={createTransport}
+                  consumer={undefined}
+                  onSubscribe={subscribeToTrack}
+                  onUnsubscribe={unsubscribeFromTrack}
+                  onPauseConsumer={pauseConsumer}
+                  onResumeConsumer={resumeConsumer}
                 />
-              )
-            )
-          })}
+              )}
+              {camAudioProducer && (
+                <TrackControl
+                  peers={peers!}
+                  peerName="my"
+                  mediaTag="cam-audio"
+                  mediaInfo={peers && peers[peerId]?.media?.['cam-audio']}
+                  myPeerId={peerId}
+                  createTransport={createTransport}
+                  consumer={undefined}
+                  onSubscribe={subscribeToTrack}
+                  onUnsubscribe={unsubscribeFromTrack}
+                  onPauseConsumer={pauseConsumer}
+                  onResumeConsumer={resumeConsumer}
+                />
+              )}
+            </div>
+          )}
+
+          {/* Remote peer media tracks */}
+          {peers &&
+            sortPeers(peers).map(
+              (peer) =>
+                peer.id !== peerId && (
+                  <div
+                    key={peer.id}
+                    className="flex gap-2 border border-green-500 rounded-md p-2"
+                  >
+                    {Object.entries(peer.media).map(([mediaTag, info]) => {
+                      const consumer = consumersRef.current.find(
+                        (c) =>
+                          c.appData.peerId === peer.id &&
+                          c.appData.mediaTag === mediaTag
+                      )
+                      return (
+                        <TrackControl
+                          key={`${peer.id}-${mediaTag}`}
+                          peers={peers}
+                          peerName={peer.id}
+                          mediaTag={mediaTag}
+                          mediaInfo={info as any}
+                          myPeerId={peerId}
+                          createTransport={createTransport}
+                          consumer={consumer}
+                          onSubscribe={subscribeToTrack}
+                          onUnsubscribe={unsubscribeFromTrack}
+                          onPauseConsumer={pauseConsumer}
+                          onResumeConsumer={resumeConsumer}
+                        />
+                      )
+                    })}
+                  </div>
+                )
+            )}
         </div>
 
-        <div
-          id="remote-audio"
-          className="border h-48"
+        <button
+          onClick={shareCameraStreams}
+          className="border mx-1 bg-blue-700 text-white"
         >
-          {consumersRef.current.map(
-            (consumer) =>
-              consumer.kind === 'audio' && (
-                <RemoteAudio
-                  key={consumer.id}
-                  consumer={consumer}
-                />
+          Camera
+        </button>
+
+        <div>
+          {/* for video and audio */}
+          <div
+            id="remote-video"
+            className="border h-48"
+          >
+            {consumersRef.current.map((consumer) => {
+              // console.log(`consumer inside map:`, consumer)
+              return (
+                consumer.kind === 'video' && (
+                  <RemoteVideo
+                    key={consumer.id}
+                    consumer={consumer}
+                  />
+                )
               )
-          )}
+            })}
+          </div>
+
+          <div
+            id="remote-audio"
+            className="border h-48"
+          >
+            {consumersRef.current.map(
+              (consumer) =>
+                consumer.kind === 'audio' && (
+                  <RemoteAudio
+                    key={consumer.id}
+                    consumer={consumer}
+                  />
+                )
+            )}
+          </div>
         </div>
       </div>
     </div>
