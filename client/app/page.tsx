@@ -1017,10 +1017,10 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center absolute overflow-hidden p-4 z-100  border-red-600 w-full border">
+    <div className="min-h-screen flex flex-col justify-center items-center absolute overflow-hidden p-4 z-100  w-full ">
       {/* <AnimatedBackground /> */}
-      <div>
-        <header className="flex flex-col sm:flex-row justify-between items-center mb-8 sm:mb-12 gap-4 w-full border">
+      <div className="neutro-box p-3">
+        <header className="flex flex-col sm:flex-row justify-between items-center mb-8 sm:mb-12 gap-4 w-full ">
           <InteractiveTitle />
           <ThemeToggle />
         </header>
@@ -1030,24 +1030,24 @@ export default function Home() {
           placeholder="Room ID"
           value={roomIdInput}
           onChange={(e) => onChangeHandler(e)}
-          className="border m-10"
+          className="border m-2 neutro-input"
         />
         {!joinedRoom && (
           <button
             onClick={handleJoinRoom}
-            className="border mx-1 bg-blue-700 text-white"
+            className="border mx-1 neutro-button text-white"
           >
             Join Room
           </button>
         )}
         <button
           onClick={handleGetAllPeers}
-          className="border mx-1 bg-blue-700 text-white"
+          className="border mx-1 neutro-button"
         >
           Get All Peers
         </button>
 
-        <div className="flex flex-col gap-4 border border-amber-500 p-2">
+        <div className="flex flex-col gap-4  p-2">
           {/* My own media tracks */}
           {(camVideoProducer || camAudioProducer) && (
             <div className="flex gap-2">
@@ -1123,7 +1123,7 @@ export default function Home() {
 
         <button
           onClick={shareCameraStreams}
-          className="border mx-1 bg-blue-700 text-white"
+          className="border mx-1 neutro-button"
         >
           Camera
         </button>
