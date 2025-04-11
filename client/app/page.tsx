@@ -24,6 +24,8 @@ import {
 import TrackControl from './components/TrackControl'
 import { RemoteAudio, RemoteVideo } from './components/RemoteStreams'
 import AnimatedBackground from './components/AnimatedBackground'
+import InteractiveTitle from './components/InteractiveTitle'
+import ThemeToggle from './components/ThemeToggler'
 // import { error } from 'console'
 
 export default function Home() {
@@ -1015,16 +1017,20 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center relative overflow-hidden p-4 z-10">
+    <div className="min-h-screen flex flex-col justify-center items-center absolute overflow-hidden p-4 z-100  border-red-600 w-full border">
       {/* <AnimatedBackground /> */}
-      <div className="z-10 w-full max-w-4xl ">
-        <h2>Let's Meet</h2>
+      <div>
+        <header className="flex flex-col sm:flex-row justify-between items-center mb-8 sm:mb-12 gap-4 w-full border">
+          <InteractiveTitle />
+          <ThemeToggle />
+        </header>
+        {/* <h2 className="text-red-100">Let's Meet</h2> */}
         <input
           type="text"
           placeholder="Room ID"
           value={roomIdInput}
           onChange={(e) => onChangeHandler(e)}
-          className="border"
+          className="border m-10"
         />
         {!joinedRoom && (
           <button

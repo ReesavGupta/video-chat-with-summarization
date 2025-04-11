@@ -363,12 +363,12 @@ export const createConnection = async (
 
     consumer.on('transportclose', () => {
       console.log(`consumers transport closed (consumer id):`, consumer.id)
-      closeConsumer(consumer)
+      closeConsumer(consumer, room)
     })
 
     consumer.on('producerclose', () => {
       console.log(`consumers producer closed (consumer id):`, consumer.id)
-      closeConsumer(consumer)
+      closeConsumer(consumer, room)
     })
 
     // stick this consumer in our list of consumers to keep track of,
@@ -468,9 +468,13 @@ async function closeProducer(producer: Producer, room: Room) {
   }
 }
 
-async function closeConsumer(consumer: Consumer) {
-  await consumer.close()
+async function closeConsumer(consumer: Consumer, room : Room) {
+  consumer.close()
   // remove this consumer from our roomState.consumers list
+
+
+   delete room.consumers[consumer.id]
+  // consumer.id
 
   // remove layer info from from our roomState...consumerLayers bookkeeping
 }
