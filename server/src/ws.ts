@@ -14,6 +14,7 @@ import type {
 } from 'mediasoup/node/lib/types'
 import type { HandleSendTrackMessageType } from './types/types'
 import { sleep } from 'bun'
+import { startRecording } from './lib/recording/recording'
 
 export const createConnection = async (
   wss: WebSocketServer,
@@ -447,14 +448,23 @@ export const createConnection = async (
       )
     }
   }
-}
+  /*
+    this recording is for 
+  */
 
-/*
-  this recording is for 
-*/
-
-async function handleRecording(message: string, socket: WebSocket) {
-  console.log(`this is handleRecording`)
+  async function handleRecording(
+    message: { roomId: string; type: string },
+    socket: WebSocket
+  ) {
+    console.log(`this is handleRecording`)
+    const { roomId } = message
+    const room = rooms.get(roomId)
+    if (!room) {
+      console.error('room not found for recording')
+      return
+    }
+    startRecording(room)
+  }
 }
 
 // ------------------------utilities----------------------------------
