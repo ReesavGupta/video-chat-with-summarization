@@ -55,6 +55,8 @@ export const createConnection = async (
         case 'resume':
           handleResume(message, socket)
           break
+        case 'startRecording':
+          handleRecording(message, socket)
       }
     })
   })
@@ -447,6 +449,14 @@ export const createConnection = async (
   }
 }
 
+/*
+  this recording is for 
+*/
+
+async function handleRecording(message: string, socket: WebSocket) {
+  console.log(`this is handleRecording`)
+}
+
 // ------------------------utilities----------------------------------
 
 async function closeProducer(producer: Producer, room: Room) {
@@ -468,12 +478,11 @@ async function closeProducer(producer: Producer, room: Room) {
   }
 }
 
-async function closeConsumer(consumer: Consumer, room : Room) {
+async function closeConsumer(consumer: Consumer, room: Room) {
   consumer.close()
   // remove this consumer from our roomState.consumers list
 
-
-   delete room.consumers[consumer.id]
+  delete room.consumers[consumer.id]
   // consumer.id
 
   // remove layer info from from our roomState...consumerLayers bookkeeping

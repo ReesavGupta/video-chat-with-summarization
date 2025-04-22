@@ -37,6 +37,7 @@ export default function Home() {
 
   // ---------------important states-------------
   const [peerId, setPeerId] = useState<string>('')
+  const [roomOwner, setRoomOwner] = useState<string>('')
   const [currentActiveSpeaker, setCurrentActiveSpeaker] =
     useState<activeSpeakerType | null>(null)
   const [peers, setPeers] = useState<peersType | null>(null)
@@ -70,6 +71,7 @@ export default function Home() {
   const [recvTransport, setRecvTransport] = useState<Transport | null>(null)
 
   // -----------Refs-----------------------------
+  const roomOwnerRef = useRef<string>('')
   const syncIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const socketRef = useRef<WebSocket | null>(null)
   const roomIdInputRef = useRef<string>('')
@@ -224,6 +226,17 @@ export default function Home() {
 
     setCurrentActiveSpeaker(activeSpeaker)
     setPeers(peers)
+    console.log(`this is the peers:`, peers)
+    const condn = Object.keys(peers).length === 1
+    console.log(`this is the: ${condn}`)
+    if (!roomOwnerRef.current) {
+      if (condn) {
+        setRoomOwner(Object.keys(peers)[0].toString())
+        // console.log(`this is the peerId: ${peerId}`)
+        roomOwnerRef.current = Object.keys(peers)[0].toString()
+      }
+    }
+    // console.log('this is the room owner:', roomOwnerRef.current)
 
     if (!consumersRef.current) {
       console.error(`there is no consumersRef.current inside on sync`)
@@ -953,6 +966,22 @@ export default function Home() {
     }
   }
 
+  function handleRecordMeeting() {
+    // check if the meeting has started or not
+    // if there are enough auio streams to record
+    // if no. return an alert or something
+    console.log(`i am clickeddddd :DDDDD`)
+    if (!socketRef.current) {
+      console.error('no socket inside hanlde record meeting')
+      return
+    }
+    const msg = {
+      type: 'startRecording',
+      roomId: roomIdInputRef.current,
+    }
+    socketRef.current.send(JSON.stringify(msg))
+  }
+
   // --------------------utils-----------------
 
   //
@@ -1047,6 +1076,12 @@ export default function Home() {
           Get All Peers
         </button>
 
+        {roomOwnerRef.current !== '' &&
+          peerId !== '' &&
+          roomOwnerRef.current === peerId && (
+            <button onClick={handleRecordMeeting}>Record Meeting :D</button>
+          )}
+
         <div className="flex flex-col gap-4  p-2">
           {/* My own media tracks */}
           {(camVideoProducer || camAudioProducer) && (
@@ -1059,7 +1094,7 @@ export default function Home() {
                   mediaInfo={peers && peers[peerId]?.media?.['cam-video']}
                   myPeerId={peerId}
                   createTransport={createTransport}
-                  consumer={undefined}
+                  consumer={consumerRef.current}
                   onSubscribe={subscribeToTrack}
                   onUnsubscribe={unsubscribeFromTrack}
                   onPauseConsumer={pauseConsumer}
@@ -1074,7 +1109,7 @@ export default function Home() {
                   mediaInfo={peers && peers[peerId]?.media?.['cam-audio']}
                   myPeerId={peerId}
                   createTransport={createTransport}
-                  consumer={undefined}
+                  consumer={consumerRef.current}
                   onSubscribe={subscribeToTrack}
                   onUnsubscribe={unsubscribeFromTrack}
                   onPauseConsumer={pauseConsumer}
@@ -1108,7 +1143,7 @@ export default function Home() {
                           mediaInfo={info as any}
                           myPeerId={peerId}
                           createTransport={createTransport}
-                          consumer={consumer}
+                          consumer={consumer!}
                           onSubscribe={subscribeToTrack}
                           onUnsubscribe={unsubscribeFromTrack}
                           onPauseConsumer={pauseConsumer}

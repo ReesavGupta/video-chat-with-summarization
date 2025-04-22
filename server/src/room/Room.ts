@@ -69,6 +69,8 @@ export class Room {
   public router: Router
   public audioLevelObserver?: AudioLevelObserver
 
+  public roomOwner: string = ''
+
   constructor(id: string, router: Router) {
     this.router = router
     this.id = id
@@ -99,6 +101,9 @@ export class Room {
   }
 
   addPeer(peerId: string) {
+    if (Object.keys(this.peers).length === 0) {
+      this.roomOwner = peerId
+    }
     this.peers[peerId] = {
       peerId,
       joinTs: Date.now(),

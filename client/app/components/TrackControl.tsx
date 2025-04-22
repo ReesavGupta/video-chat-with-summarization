@@ -21,7 +21,7 @@ export default function TrackControl({
   mediaInfo: { paused: boolean }
   myPeerId: string
   createTransport: (direction: string) => void
-  consumer: Consumer | undefined
+  consumer: Consumer | null
   onSubscribe: (peerId: string, mediaTag: string) => void
   onUnsubscribe: (peerId: string, mediaTag: string) => void
   onPauseConsumer: (consumer: Consumer) => void
