@@ -4,26 +4,29 @@ import type {
   Producer,
 } from 'mediasoup/node/lib/types'
 import { router } from '../..'
-import { spawn } from 'bun'
+import { spawn, type Subprocess } from 'bun'
 import {
   findAvailablePort,
   getCodecInfoFromRtpParameters,
   releasePort,
 } from './utils'
 import { createSdpText, spawnFFmpeg } from './utils/ffmpeg'
+import path from 'path'
+import fs from 'fs'
+import os from 'os'
+import { kill, pid } from 'process'
 
 // Track active recordings by producer ID
-const activeRecordings = new Map<
-  string,
-  {
-    plainTransport: PlainTransport
-    consumer: Consumer
-    ffmpeg: ChildProcessWithoutNullStreams
-    outputPath: string
-    port: number
-    cleanup: () => void
-  }
->()
+type RecordingInfo = {
+  plainTransport: PlainTransport
+  consumer: Consumer
+  ffmpeg: Subprocess<'ignore', 'pipe', 'pipe'> | undefined
+  outputPath: string
+  port: number
+  cleanup: () => void
+}
+
+const activeRecordings = new Map<string, RecordingInfo>()
 
 export const PORT_RANGE_START = 50000
 export const PORT_RANGE_END = 51000
@@ -134,7 +137,7 @@ export async function setUpRecordingForProducer(producer: Producer) {
     console.log('Generated SDP:', sdpContent)
 
     // Setup directories and files
-    const outputDir = path.resolve(__dirname, '../../public/recordings')
+    const outputDir = path.resolve(import.meta.dir, '../../public/recordings')
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir, { recursive: true })
     }
@@ -153,10 +156,15 @@ export async function setUpRecordingForProducer(producer: Producer) {
     // Start FFmpeg with enhanced error handling
     const ffmpeg = spawnFFmpeg(sdpFilePath, outputPath, ffmpegPort!)
 
+    if (!ffmpeg) {
+      console.error('could not spawn ffmpeg')
+      return
+    }
+
     // Set a timeout for the recording
     const ffmpegTimeout = setTimeout(() => {
       console.log('FFmpeg timeout reached, stopping recording')
-      ffmpeg.kill('SIGINT')
+      kill(ffmpeg.pid)
     }, 10 * 60 * 1000) // 10 minutes
 
     // Setup cleanup function
@@ -186,8 +194,7 @@ export async function setUpRecordingForProducer(producer: Producer) {
     }
 
     // Add exit handler
-    ffmpeg.on('exit', (code, signal) => {
-      // Try to check if the file was created successfully
+    ffmpeg.exited.then((code) => {
       if (fs.existsSync(outputPath)) {
         const stats = fs.statSync(outputPath)
         console.log(`Output file size: ${stats.size} bytes`)
@@ -205,7 +212,6 @@ export async function setUpRecordingForProducer(producer: Producer) {
         console.error('Output file was not created')
       }
 
-      // Clean up
       cleanup()
     })
 

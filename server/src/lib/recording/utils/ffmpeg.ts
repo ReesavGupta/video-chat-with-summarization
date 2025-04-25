@@ -43,27 +43,53 @@ export function spawnFFmpeg(
 ) {
   console.log(`Starting FFmpeg process to record from port ${port}`)
 
-  const ffmpeg = spawn('ffmpeg', [
-    '-loglevel',
-    'debug',
-    '-protocol_whitelist',
-    'file,udp,rtp',
-    '-i',
-    sdpFilePath,
-    '-acodec',
-    'libmp3lame',
-    '-b:a',
-    '128k',
-    '-ar',
-    '48000',
-    '-ac',
-    '2',
-    '-y',
-    outputPath,
-  ])
+  // const ffmpeg = spawn('ffmpeg', [
+  //   '-loglevel',
+  //   'debug',
+  //   '-protocol_whitelist',
+  //   'file,udp,rtp',
+  //   '-i',
+  //   sdpFilePath,
+  //   '-acodec',
+  //   'libmp3lame',
+  //   '-b:a',
+  //   '128k',
+  //   '-ar',
+  //   '48000',
+  //   '-ac',
+  //   '2',
+  //   '-y',
+  //   outputPath,
+  // ])
+
+  const ffmpeg = spawn(
+    [
+      'ffmpeg',
+      '-loglevel',
+      'debug',
+      '-protocol_whitelist',
+      'file,udp,rtp',
+      '-i',
+      sdpFilePath,
+      '-acodec',
+      'libmp3lame',
+      '-b:a',
+      '128k',
+      '-ar',
+      '48000',
+      '-ac',
+      '2',
+      '-y',
+      outputPath,
+    ],
+    {
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }
+  )
 
   // Improved error handling
   let startupCompleted = false
+
   const startupTimeout = setTimeout(() => {
     if (!startupCompleted) {
       console.error('FFmpeg startup timeout, process might be hanging')
@@ -71,36 +97,43 @@ export function spawnFFmpeg(
     }
   }, 10000) // 10 seconds startup timeout
 
-  ffmpeg.stderr.on('data', (data) => {
-    const message = data.toString()
+  if (!ffmpeg.stderr) {
+    return
+  }
 
-    // Check for successful startup indicators
-    if (message.includes('Output #0') || message.includes('encoder setup')) {
-      startupCompleted = true
-      clearTimeout(startupTimeout)
-    }
+  const reader = ffmpeg.stderr.getReader()
+  const decoder = new TextDecoder()
+  async function readStderr() {
+    if (!reader) return
 
-    // Check for binding errors
-    if (message.includes('bind failed') || message.includes('Error number')) {
-      console.error(`FFmpeg port ${port} binding error: ${message}`)
-      // Consider this a fatal error
-      ffmpeg.kill('SIGKILL')
-    }
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      const message = decoder.decode(value)
 
-    // Log only if debug enabled or error
-    if (
-      message.includes('Error') ||
-      message.includes('error') ||
-      process.env.DEBUG
-    ) {
-      console.error(`FFmpeg stderr: ${message}`)
+      if (message.includes('Output #0') || message.includes('encoder setup')) {
+        startupCompleted = true
+        clearTimeout(startupTimeout)
+      }
+
+      if (message.includes('bind failed') || message.includes('Error number')) {
+        console.error(`FFmpeg binding error on port ${port}:`, message)
+        ffmpeg.kill('SIGKILL')
+      }
+
+      if (message.toLowerCase().includes('error')) {
+        console.error(`FFmpeg stderr: ${message}`)
+      }
     }
+  }
+
+  readStderr().catch((err) => {
+    console.error('Error reading FFmpeg stderr:', err)
   })
 
-  // Handle process termination
-  ffmpeg.on('exit', (code, signal) => {
+  ffmpeg.exited.then((code) => {
     clearTimeout(startupTimeout)
-    console.log(`FFmpeg exited with code ${code}, signal ${signal}`)
+    console.log(`FFmpeg exited with code : ${code} `)
   })
 
   return ffmpeg
