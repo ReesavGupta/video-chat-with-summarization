@@ -2,7 +2,7 @@ import WebSocket, { WebSocketServer } from 'ws'
 import { Room } from './room/Room'
 import type { Router } from 'mediasoup/node/lib/RouterTypes'
 import uuidSingleton from './utils/generateUuid'
-import { createWebRtcTransport } from './lib/createWebRtcTransport'
+import { createWebRtcTransport } from './lib/mediasoup/createWebRtcTransport'
 import type { DtlsParameters } from 'mediasoup/node/lib/WebRtcTransportTypes'
 import type {
   AppData,
@@ -14,7 +14,7 @@ import type {
 } from 'mediasoup/node/lib/types'
 import type { HandleSendTrackMessageType } from './types/types'
 import { sleep } from 'bun'
-import { startRecording } from './lib/recording/recording'
+import { startRecording } from './lib/recording/setup/recording'
 
 export const createConnection = async (
   wss: WebSocketServer,

@@ -2,7 +2,7 @@ import type {
   MediaKind,
   RtpParameters,
 } from 'mediasoup/node/lib/rtpParametersTypes'
-import { PORT_RELEASE_DELAY } from '../setupRecording'
+import { PORT_RELEASE_DELAY } from '../setup/setupRecording'
 
 // Enhanced port management system
 export const usedPorts = new Map<

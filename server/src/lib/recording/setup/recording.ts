@@ -1,5 +1,5 @@
 import type { Producer } from 'mediasoup/node/lib/types'
-import type { Room } from '../../room/Room'
+import type { Room } from '../../../room/Room'
 import { setUpRecordingForProducer } from './setupRecording'
 
 export async function startRecording(room: Room) {
