@@ -1,5 +1,5 @@
 import type { Router } from 'mediasoup/node/lib/types'
-import { config } from '../config/conf'
+import { config } from '../../config/conf'
 
 export async function createWebRtcTransport(
   router: Router,
@@ -8,7 +8,7 @@ export async function createWebRtcTransport(
 ) {
   const { initialAvailableOutgoingBitrate, maxIncomeBitrate } =
     config.mediasoup.webRtcTransport
-    const transport = await router.createWebRtcTransport({
+  const transport = await router.createWebRtcTransport({
     listenIps: config.mediasoup.webRtcTransport.listenIps,
     enableUdp: true,
     enableTcp: true,

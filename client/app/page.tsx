@@ -29,7 +29,7 @@ import ThemeToggle from './components/ThemeToggler'
 // import { error } from 'console'
 
 export default function Home() {
-  const wsUrl = 'ws://localhost:3000'
+  const wsUrl = 'ws://localhost:3001'
   // ------------------state-------------------
   const [socket, setSocket] = useState<WebSocket | null>(null)
   const [roomIdInput, setRoomIdInput] = useState<string>('')

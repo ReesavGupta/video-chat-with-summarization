@@ -23,10 +23,11 @@ export const createConnection = async (
   let rooms: Map<string, Room> = new Map()
 
   wss.on('connection', (socket: WebSocket) => {
+    console.log(`socket connected: `, socket)
     socket.on('message', async (event: string) => {
       const message = JSON.parse(event)
 
-      // console.log(`this is the message:`, message)
+      console.log(`this is the message:`, message)
 
       switch (message.type) {
         case 'join-room':
@@ -67,7 +68,7 @@ export const createConnection = async (
     message: { type: string; data: { roomId: string } }
   ) {
     const { roomId } = message.data
-
+    console.log(`inside handle join room`)
     const peerId = uuidSingleton.generate()
     if (!rooms.has(roomId)) {
       const room = new Room(roomId, router)

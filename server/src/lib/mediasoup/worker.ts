@@ -1,5 +1,5 @@
 import { createWorker } from 'mediasoup'
-import { config } from '../config/conf'
+import { config } from '../../config/conf'
 import type { AppData, Router, Worker } from 'mediasoup/node/lib/types'
 
 const createMediasoupWorkerAndRouter = async (): Promise<{

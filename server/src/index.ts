@@ -2,24 +2,34 @@ import http from 'http'
 import express from 'express'
 import { createConnection } from '../src/ws'
 import { WebSocketServer } from 'ws'
-import { createMediasoupWorkerAndRouter } from './lib/worker'
+import { createMediasoupWorkerAndRouter } from './lib/mediasoup/worker'
 
 const expressApp = express()
 const server = http.createServer(expressApp)
 const wss = new WebSocketServer({ server })
 
-//
-// start mediasoup with a single worker and router
-//
-const result = await createMediasoupWorkerAndRouter()
-if (!result) {
-  throw new Error('Failed to create Mediasoup worker and router')
-}
-const { worker, router } = result
+const port = 3001
 
-createConnection(wss, router)
+let router: any
+let worker: any
 
-const port = 3000
+createMediasoupWorkerAndRouter()
+  .then(async (result) => {
+    if (!result) {
+      throw new Error('Failed to create Mediasoup worker and router')
+    }
+
+    router = result.router
+    worker = result.worker
+
+    await createConnection(wss, router)
+    console.log(
+      'Mediasoup worker and router created. WebSocket handler attached.'
+    )
+  })
+  .catch((err) => {
+    console.error('Error initializing mediasoup:', err)
+  })
 
 server.listen(port, () => {
   console.log(`server is listening on port: ${port}`)
