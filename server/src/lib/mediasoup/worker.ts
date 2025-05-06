@@ -12,6 +12,8 @@ const createMediasoupWorkerAndRouter = async (): Promise<{
       logTags: config.mediasoup.worker.logTags,
     })
 
+    console.log(`this is worker:`, worker)
+
     worker.on('died', () => {
       console.error(
         'mediasoup worker died, exiting in 2 seconds ... [pid: &d]',
@@ -23,7 +25,13 @@ const createMediasoupWorkerAndRouter = async (): Promise<{
     })
     const mediaCodecs = config.mediasoup.router.mediaCodecs
 
-    const router: Router<AppData> = await worker.createRouter({ mediaCodecs })
+    let router: Router<AppData>
+    try {
+      router = await worker.createRouter({ mediaCodecs })
+    } catch (err) {
+      console.error('Failed to create router:', err)
+      throw err // Re-throw to trigger the main catch
+    }
 
     return { router, worker }
   } catch (error) {

@@ -1,0 +1,173 @@
+[33mcommit e1ee2c2c2fd165b406b64870204ebddb19bcbaf6[m[33m ([m[1;36mHEAD -> [m[1;32mmaster[m[33m)[m
+Author: ReesvGupta <guptareesav16@gmail.com>
+Date:   Tue May 6 18:21:06 2025 +0530
+
+    trying to make it work
+
+[33mcommit 2dee71c22d54d8106386b7e6eef0a295ecbe3055[m[33m ([m[1;31morigin/master[m[33m)[m
+Author: ReesvGupta <guptareesav16@gmail.com>
+Date:   Fri Apr 25 11:48:46 2025 +0530
+
+    refactor folder structure
+
+[33mcommit 0b85aab213996f1ccfd8442679fb25949eefcc7b[m
+Author: ReesvGupta <guptareesav16@gmail.com>
+Date:   Fri Apr 25 11:45:08 2025 +0530
+
+    we are done with audio stream recordings as well ><
+
+[33mcommit 596901476a54c489aec633ddd45f535f198eab37[m
+Author: ReesvGupta <guptareesav16@gmail.com>
+Date:   Tue Apr 22 22:13:23 2025 +0530
+
+    Implement recording functionality with setup and management for audio producers
+
+[33mcommit ea826ee8e61b313b075f2dfeae7db46e8419867e[m
+Author: ReesvGupta <guptareesav16@gmail.com>
+Date:   Tue Apr 22 15:21:04 2025 +0530
+
+    Add room owner management and recording functionality in WebSocket server
+
+[33mcommit 6e7afea8f9fa18738ce58822e324ac8f9fccd1a6[m
+Author: ReesvGupta <guptareesav16@gmail.com>
+Date:   Fri Apr 11 22:45:12 2025 +0600
+
+    Refactor layout and styles in Home component for improved UI consistency
+
+[33mcommit a69c3583e58bfe05edfbf7b072d21fb739e0883a[m
+Author: ReesvGupta <guptareesav16@gmail.com>
+Date:   Fri Apr 11 22:29:51 2025 +0600
+
+    Add InteractiveTitle and ThemeToggle components; update layout and styles for improved UI
+
+[33mcommit 8b0ab933e176752df0034251d111a2225d45259a[m
+Author: ReesvGupta <guptareesav16@gmail.com>
+Date:   Tue Apr 8 13:31:56 2025 +0530
+
+    Add AnimatedBackground and ThemeContext for dynamic theming and visual effects
+
+[33mcommit 82fde349a114d1fa827ea82df4223cce660b94c6[m
+Author: ReesvGupta <guptareesav16@gmail.com>
+Date:   Mon Apr 7 22:26:23 2025 +0530
+
+    ref: frontend
+
+[33mcommit 8a2270d2e33d6d0cfdf428728d319cfa622e25e2[m
+Author: ReesvGupta <guptareesav16@gmail.com>
+Date:   Fri Apr 4 17:33:32 2025 +0530
+
+    workss git add .!
+
+[33mcommit b30f307ccbec5625a972a27938914b6dbb15589d[m
+Author: ReesvGupta <guptareesav16@gmail.com>
+Date:   Thu Apr 3 18:13:07 2025 +0530
+
+    Add RemoteVideo and RemoteAudio components for handling media streams
+
+[33mcommit 58d190119a32d4426743fcf8e9be20901d8a2aa5[m
+Author: ReesvGupta <guptareesav16@gmail.com>
+Date:   Thu Apr 3 15:18:14 2025 +0530
+
+    Implement consumer resume functionality and connection state handling in WebRTC
+
+[33mcommit 443d4ad10fdc61b5adb50545d6937b18ebc161a3[m
+Author: ReesvGupta <guptareesav16@gmail.com>
+Date:   Wed Apr 2 21:14:57 2025 +0530
+
+    pushhhh
+
+[33mcommit cf7a4dc6fbdba6bcfc616ee7fe7998f4dc30d026[m
+Author: ReesvGupta <guptareesav16@gmail.com>
+Date:   Wed Apr 2 20:19:10 2025 +0530
+
+    Implement receive transport handling and consumer subscription logic in WebRTC
+
+[33mcommit f6e8cccffeaed8904ca3ad81816a0f4c4fc4041a[m
+Author: ReesvGupta <guptareesav16@gmail.com>
+Date:   Mon Mar 31 22:47:20 2025 +0530
+
+    Refactor TrackControl component to improve media consumer handling and subscription logic
+
+[33mcommit a825a69f4ff378cc7b449706c924e05c2a96d2ca[m
+Author: ReesvGupta <guptareesav16@gmail.com>
+Date:   Sun Mar 30 20:38:27 2025 +0530
+
+    starting with the track controller
+
+[33mcommit 73186ec2b934038bd7584b247144a1a9ec69ba2f[m
+Author: ReesvGupta <guptareesav16@gmail.com>
+Date:   Thu Mar 27 16:18:11 2025 +0530
+
+    producing is done
+
+[33mcommit f02873c7cdc0428aa6d7e8e98dcfa537754cc483[m
+Author: ReesvGupta <guptareesav16@gmail.com>
+Date:   Thu Mar 27 16:03:06 2025 +0530
+
+    Implement media production handling for camera streams in WebRTC
+
+[33mcommit c6b35278383092cbfe294f891c7622a419804ae4[m
+Author: ReesvGupta <guptareesav16@gmail.com>
+Date:   Wed Mar 26 23:08:12 2025 +0530
+
+    Add sendTransport reference and logging for media transport handling
+
+[33mcommit 716213a8dd5cb1699ae5520511ff1986b3f0ce01[m
+Author: ReesvGupta <guptareesav16@gmail.com>
+Date:   Tue Mar 25 21:35:32 2025 +0530
+
+    Implement media track handling and transport message processing for WebRTC
+
+[33mcommit 4481f0094c8d0f14a7457a1f3f58b3260ebf0a4d[m
+Author: ReesvGupta <guptareesav16@gmail.com>
+Date:   Sun Mar 23 20:11:16 2025 +0530
+
+    refactor
+
+[33mcommit ee524b4e1bf7a6b4706fa1aea526a147dec8261c[m
+Author: ReesvGupta <guptareesav16@gmail.com>
+Date:   Sat Mar 15 00:03:42 2025 +0530
+
+    Implement transport creation and connection handling for WebRTC in client and server
+
+[33mcommit bea3e469bfd46f0793c6ddbfbbe97ccea32c9155[m
+Author: ReesvGupta <guptareesav16@gmail.com>
+Date:   Thu Mar 13 15:34:47 2025 +0530
+
+    Implement WebRTC transport creation and enhance WebSocket capabilities for media streaming
+
+[33mcommit 76867a03ba2f7c1dba2343d526137d43f8d3c506[m
+Author: ReesvGupta <guptareesav16@gmail.com>
+Date:   Thu Mar 13 13:05:02 2025 +0530
+
+    Enhance WebSocket functionality with sync feature and room management improvements
+
+[33mcommit ed83c609539ecb1005dbaf675ac0fb63c8178f01[m
+Author: ReesvGupta <guptareesav16@gmail.com>
+Date:   Thu Mar 13 11:15:44 2025 +0530
+
+    Add room joining and peer retrieval functionality with UUID generation
+
+[33mcommit 0b483b55d44fd78712b43ecbff99cd82a48a8b23[m
+Author: ReesvGupta <guptareesav16@gmail.com>
+Date:   Wed Mar 12 23:00:47 2025 +0530
+
+    Implement peer management in Room class and add functionality to retrieve all peers in WebSocket connection
+
+[33mcommit af390407a12a8afaa444ed3d47b935ce2234de2b[m
+Author: ReesvGupta <guptareesav16@gmail.com>
+Date:   Wed Mar 12 14:30:32 2025 +0530
+
+    Add WebSocket room joining functionality and integrate Mediasoup worker
+
+[33mcommit 36a899ff16693b3f9c608f70313102031441ee78[m
+Author: ReesvGupta <guptareesav16@gmail.com>
+Date:   Wed Mar 12 10:35:00 2025 +0530
+
+    Implement WebSocket server with Mediasoup integration and update client page
+
+[33mcommit 5078c811ed81877a8d989a4f4c0e2d7add26c6e2[m
+Author: ReesvGupta <guptareesav16@gmail.com>
+Date:   Tue Mar 11 21:36:23 2025 +0530
+
+    init commit :crab:

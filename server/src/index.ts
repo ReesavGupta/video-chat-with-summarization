@@ -22,6 +22,8 @@ createMediasoupWorkerAndRouter()
     router = result.router
     worker = result.worker
 
+    console.log('\n\nthis is router : ', router)
+
     await createConnection(wss, router)
     console.log(
       'Mediasoup worker and router created. WebSocket handler attached.'
