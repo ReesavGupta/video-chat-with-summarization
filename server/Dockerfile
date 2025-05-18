@@ -3,7 +3,6 @@ FROM oven/bun:1.1 AS builder
 
 WORKDIR /app
 
-# Install build dependencies needed for mediasoup worker local build if necessary
 RUN apt-get update && apt-get install -y \
   curl \
   python3 \
@@ -13,7 +12,6 @@ RUN apt-get update && apt-get install -y \
   && ln -s /usr/bin/python3 /usr/bin/python \
   && rm -rf /var/lib/apt/lists/*
 
-# Create directory for prebuilt MediaSoup worker
 RUN mkdir -p ./worker/prebuild
 
 # Download prebuilt MediaSoup worker (adjust kernel version to match the binary)
@@ -27,10 +25,8 @@ COPY package.json ./
 ENV MEDIASOUP_FORCE_WORKER_PREBUILT_DOWNLOAD=true
 ENV PYTHONPATH=/app/node_modules/mediasoup/worker/pip_invoke
 
-# Install dependencies
 RUN bun install
 
-# Copy the full source code
 COPY . .
 
 # ===================== 2. Runtime Stage =====================
@@ -38,10 +34,8 @@ FROM oven/bun:1.1-slim AS runner
 
 WORKDIR /app
 
-# Install runtime dependencies like ffmpeg
 RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
 
-# Copy app from builder
 COPY --from=builder /app /app
 
 ENV NODE_ENV=production
