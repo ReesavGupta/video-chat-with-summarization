@@ -1,4 +1,4 @@
-import type { PlainTransport, Producer } from 'mediasoup/node/lib/types'
+import type { PlainTransport, Producer } from 'mediasoup/types'
 import { getCodecInfoFromRtpParameters } from '.'
 import { spawn } from 'bun'
 

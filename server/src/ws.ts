@@ -13,7 +13,7 @@ import type {
   Transport,
 } from 'mediasoup/node/lib/types'
 import type { HandleSendTrackMessageType } from './types/types'
-import { sleep } from 'bun'
+// import { sleep } from 'bun'
 import { startRecording } from './lib/recording/setup/recording'
 
 export const createConnection = async (
@@ -337,6 +337,8 @@ export const createConnection = async (
 
     await sleep(500)
 
+    // await new Promise((resolve) => setTimeout(resolve, 500))
+
     const transport: Transport = Object.values(room.transports).find(
       (trans) => {
         console.log(
@@ -497,4 +499,8 @@ async function closeConsumer(consumer: Consumer, room: Room) {
   // consumer.id
 
   // remove layer info from from our roomState...consumerLayers bookkeeping
+}
+
+function sleep(delay: number) {
+  return new Promise((resolve) => setTimeout(resolve, delay))
 }

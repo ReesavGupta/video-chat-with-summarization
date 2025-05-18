@@ -27,7 +27,9 @@ const createMediasoupWorkerAndRouter = async (): Promise<{
 
     let router: Router<AppData>
     try {
+      console.log(`before cration of router`)
       router = await worker.createRouter({ mediaCodecs })
+      console.log(`router:`, router)
     } catch (err) {
       console.error('Failed to create router:', err)
       throw err // Re-throw to trigger the main catch

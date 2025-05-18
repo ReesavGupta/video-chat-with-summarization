@@ -7,8 +7,8 @@ import type {
 const config = {
   mediasoup: {
     worker: {
-      rtcMinPort: 40000,
-      rtcMaxPort: 49999,
+      rtcMinPort: 46000,
+      rtcMaxPort: 46999,
       logLevel: 'debug',
       logTags: [
         'info',
