@@ -55,7 +55,7 @@ export async function setUpRecordingForProducer(producer: Producer) {
     // Try multiple ports if necessary
     let ffmpegPort: number | undefined
     let attempts = 0
-    const maxAttempts = 5
+    const maxAttempts = 15
 
     while (attempts < maxAttempts) {
       try {
@@ -216,6 +216,8 @@ export async function setUpRecordingForProducer(producer: Producer) {
     })
 
     console.log(`Recording started for producer ${targetProducer.id}`)
+    console.log(`Recording output path: ${outputPath}`)
+    console.log(`SDP file path: ${sdpFilePath}`)
 
     // Create recording info object
     const recordingInfo = {

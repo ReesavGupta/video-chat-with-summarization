@@ -26,14 +26,20 @@ import { RemoteAudio, RemoteVideo } from './components/RemoteStreams'
 import AnimatedBackground from './components/AnimatedBackground'
 import InteractiveTitle from './components/InteractiveTitle'
 import ThemeToggle from './components/ThemeToggler'
+import { useRouter } from 'next/navigation'
 // import { error } from 'console'
 
 export default function Home() {
   const wsUrl = 'ws://localhost:3001'
+  // ------------------router-------------------
+  const router = useRouter()
+
+
   // ------------------state-------------------
   const [socket, setSocket] = useState<WebSocket | null>(null)
   const [roomIdInput, setRoomIdInput] = useState<string>('')
   const [joinedRoom, setJoinedRoom] = useState<boolean>(false)
+  const [stopMeeting, setStopMeeting] = useState<boolean>(false)
 
   // ---------------important states-------------
   const [peerId, setPeerId] = useState<string>('')
@@ -503,83 +509,83 @@ export default function Home() {
         console.log(`this is your client side transport: `, transport)
         recvTransportRef.current
           ? recvTransportRef.current.on(
-              'connect',
-              ({ dtlsParameters }, callback, errback) => {
-                console.log(`you are inside the transport-connect event`)
+            'connect',
+            ({ dtlsParameters }, callback, errback) => {
+              console.log(`you are inside the transport-connect event`)
 
-                if (!socketRef.current) {
-                  console.error(
-                    `there is no socket inside the transport connect event`
-                  )
-                  return
-                }
-
-                socketRef.current.send(
-                  JSON.stringify({
-                    type: 'connectTransport',
-                    data: {
-                      transportId: recvTransportRef.current?.id,
-                      dtlsParameters,
-                      roomId: roomIdInputRef.current,
-                    },
-                  })
+              if (!socketRef.current) {
+                console.error(
+                  `there is no socket inside the transport connect event`
                 )
-
-                const messageHandler = (event: MessageEvent) => {
-                  const message = JSON.parse(event.data.toString())
-                  if (message.type === 'connected' && socketRef.current) {
-                    console.log(
-                      `transport is connected sucessfully and the direction is: ${direction}`
-                    )
-                    callback()
-                    socketRef.current.removeEventListener(
-                      'message',
-                      messageHandler
-                    ) // Cleanup
-                  }
-                }
-                socketRef.current.addEventListener('message', messageHandler)
+                return
               }
-            )
+
+              socketRef.current.send(
+                JSON.stringify({
+                  type: 'connectTransport',
+                  data: {
+                    transportId: recvTransportRef.current?.id,
+                    dtlsParameters,
+                    roomId: roomIdInputRef.current,
+                  },
+                })
+              )
+
+              const messageHandler = (event: MessageEvent) => {
+                const message = JSON.parse(event.data.toString())
+                if (message.type === 'connected' && socketRef.current) {
+                  console.log(
+                    `transport is connected sucessfully and the direction is: ${direction}`
+                  )
+                  callback()
+                  socketRef.current.removeEventListener(
+                    'message',
+                    messageHandler
+                  ) // Cleanup
+                }
+              }
+              socketRef.current.addEventListener('message', messageHandler)
+            }
+          )
           : sendTransportRef.current?.on(
-              'connect',
-              ({ dtlsParameters }, callback, errback) => {
-                console.log(`you are inside the transport-connect event`)
+            'connect',
+            ({ dtlsParameters }, callback, errback) => {
+              console.log(`you are inside the transport-connect event`)
 
-                if (!socketRef.current) {
-                  console.error(
-                    `there is no socket inside the transport connect event`
-                  )
-                  return
-                }
-
-                socketRef.current.send(
-                  JSON.stringify({
-                    type: 'connectTransport',
-                    data: {
-                      transportId: transport.id,
-                      dtlsParameters,
-                      roomId: roomIdInputRef.current,
-                    },
-                  })
+              if (!socketRef.current) {
+                console.error(
+                  `there is no socket inside the transport connect event`
                 )
-
-                const messageHandler = (event: MessageEvent) => {
-                  const message = JSON.parse(event.data.toString())
-                  if (message.type === 'connected' && socketRef.current) {
-                    console.log(
-                      `transport is connected sucessfully and the direction is: ${direction}`
-                    )
-                    callback()
-                    socketRef.current.removeEventListener(
-                      'message',
-                      messageHandler
-                    ) // Cleanup
-                  }
-                }
-                socketRef.current.addEventListener('message', messageHandler)
+                return
               }
-            )
+
+              socketRef.current.send(
+                JSON.stringify({
+                  type: 'connectTransport',
+                  data: {
+                    transportId: transport.id,
+                    dtlsParameters,
+                    roomId: roomIdInputRef.current,
+                  },
+                })
+              )
+
+              const messageHandler = (event: MessageEvent) => {
+                const message = JSON.parse(event.data.toString())
+                if (message.type === 'connected' && socketRef.current) {
+                  console.log(
+                    `transport is connected sucessfully and the direction is: ${direction}`
+                  )
+                  callback()
+                  socketRef.current.removeEventListener(
+                    'message',
+                    messageHandler
+                  ) // Cleanup
+                }
+              }
+              socketRef.current.addEventListener('message', messageHandler)
+            }
+          )
         if (direction === 'send') {
           // sending transports will emit a produce event when a new track
           // needs to be set up to start sending. the producer's appData is
@@ -719,6 +725,13 @@ export default function Home() {
       )
     }
   }
+
+  function handleStopMeeting() {
+    setSocket(null)
+    setRoomIdInput('')
+    setStopMeeting(true)
+  }
+
   function onChangeHandler(e: any) {
     setRoomIdInput(e.target.value)
     roomIdInputRef.current = e.target.value
@@ -1075,11 +1088,28 @@ export default function Home() {
         >
           Get All Peers
         </button>
+        {
+          joinedRoom&&!stopMeeting && <button
+            onClick={handleStopMeeting}
+            className="border mx-1 neutro-button"
+          >
+            Stop Meeting
+          </button>
+        }
+        {
+          stopMeeting &&
+          <button
+            className="border mx-1 neutro-button"
+            onClick={() => router.push('/summary')}
+          >
+            View Summary
+          </button>
+        }
 
         {roomOwnerRef.current !== '' &&
           peerId !== '' &&
           roomOwnerRef.current === peerId && (
-            <button onClick={handleRecordMeeting}>Record Meeting :D</button>
+            <button onClick={handleRecordMeeting} className='border mx-1 neutro-button'>Record Meeting :D</button>
           )}
 
         <div className="flex flex-col gap-4  p-2">
